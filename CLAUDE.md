@@ -10,11 +10,14 @@ works by capturing the page's own API data, not by scraping the rendered DOM.
 
 ## Commands
 
+This project uses **pnpm** (pinned via the `packageManager` field in `package.json`).
+
 ```bash
-npm run dev        # Vite dev server; serves a hot-reloading .user.js to install once in Tampermonkey
-npm run build      # Bundle to dist/claude-artifact-exporter.user.js (the installable artifact)
-npm run lint       # eslint + tsc --noEmit
-npm run typecheck  # tsc --noEmit only
+pnpm install       # install dependencies (uses pnpm-lock.yaml)
+pnpm dev           # Vite dev server; serves a hot-reloading .user.js to install once in Tampermonkey
+pnpm build         # Bundle to dist/claude-artifact-exporter.user.js (the installable artifact)
+pnpm lint          # eslint + tsc --noEmit
+pnpm typecheck     # tsc --noEmit only
 ```
 
 There is no test runner yet. Verification is manual: build, install in Tampermonkey,

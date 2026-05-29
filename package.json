@@ -12,6 +12,16 @@
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "pnpm": ">=10",
+    "node": ">=22"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@types/greasemonkey": "^4.0.7",

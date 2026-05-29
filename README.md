@@ -26,16 +26,19 @@ See the discovery workflow below.
 
 ## Develop
 
+This project uses [pnpm](https://pnpm.io/). Install it with `corepack enable pnpm`
+(or `npm i -g pnpm`) if you don't have it.
+
 ```bash
-npm install
-npm run dev      # vite dev server; serves a live .user.js for install
-npm run build    # outputs dist/claude-artifact-exporter.user.js
-npm run lint     # eslint + tsc --noEmit
+pnpm install
+pnpm dev         # vite dev server; serves a live .user.js for install
+pnpm build       # outputs dist/claude-artifact-exporter.user.js
+pnpm lint        # eslint + tsc --noEmit
 ```
 
-With `npm run dev`, open the URL Vite prints and install the served userscript in
+With `pnpm dev`, open the URL Vite prints and install the served userscript in
 Tampermonkey once — it then hot-reloads as you edit. For a fixed install, run
-`npm run build` and drag `dist/claude-artifact-exporter.user.js` into Tampermonkey.
+`pnpm build` and drag `dist/claude-artifact-exporter.user.js` into Tampermonkey.
 
 ## Discovery workflow (reverse-engineering the schema)
 
