@@ -108,9 +108,12 @@ Obsidian-style footnotes:
   fine for now and keeps the mapping trivial (citation index → footnote number).
 - A marker `[^n]` is inserted at the citation's `end_index`. Multiple markers at
   the same point render consecutively (`...text[^1][^2]`).
-- Indices are treated as **code-point** offsets (Python-style). Slicing/insertion
-  uses a code-point array (`Array.from(content)`) so non-BMP characters (emoji in
-  the sample) stay aligned.
+- Indices are **UTF-16 offsets** — plain JavaScript string indices. Verified
+  empirically: in the sample, citation end_index 5292 lands cleanly after
+  `"...The recall payoff"` using `content.slice()`, while a code-point array
+  (`Array.from`) overshoots past the emoji at index 4893. So marker insertion
+  uses direct string indexing (`content.slice(0, end) + marker + content.slice(end)`),
+  inserting markers in **descending end_index order** so earlier offsets stay valid.
 
 ## Architecture
 
@@ -137,9 +140,10 @@ Data flow: `fetch` patch → capture store → artifact extractor → footnote r
   ```
 - **`src/footnotes.ts`** — pure function: `(content, citations) => markdownBody`.
   Numbers citations in array order (no dedup); inserts `[^n]` markers at
-  `end_index` (descending, code-point-safe); returns body + ordered reference
-  list. Fallback: if an artifact ever lacks indices, append the reference list
-  with no inline anchors (preserves all sources).
+  `end_index` using UTF-16 string indexing, in descending end_index order so
+  earlier offsets stay valid; returns body + ordered reference list. Fallback: if
+  an artifact ever lacks indices, append the reference list with no inline anchors
+  (preserves all sources).
 - **`src/markdown.ts`** — assembles `# title` + body + `---` + footnote list into
   the final document.
 - **`src/ui.ts`** — a floating button on `claude.ai`. Click opens a **popover
@@ -190,5 +194,6 @@ browser, settings UI for reference style.
 ## Open items to verify during implementation
 
 1. `update` / `rewrite` artifact payloads: full or partial `content`?
-2. Whether `start_index/end_index` are code-point or UTF-16 offsets (sample
-   contains emoji — verify alignment empirically and pick the matching slicing).
+2. ~~Whether `start_index/end_index` are code-point or UTF-16 offsets~~ —
+   **Resolved:** UTF-16 offsets (plain JS string indices). Verified against the
+   emoji-containing sample (citation end 5292 aligns with `content.slice`).
