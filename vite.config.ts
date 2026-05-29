@@ -18,7 +18,6 @@ export default defineConfig({
         'run-at': 'document-start',
         grant: [
           'GM_registerMenuCommand',
-          'GM_download',
           'GM_setClipboard',
         ],
       },
