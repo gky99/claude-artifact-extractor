@@ -40,6 +40,7 @@ export function installFetchInterceptor(): void {
   const original = target.fetch;
 
   target.fetch = async function patchedFetch(
+    this: unknown,
     ...args: Parameters<typeof fetch>
   ): Promise<Response> {
     const response = await original.apply(this, args);
