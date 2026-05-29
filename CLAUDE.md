@@ -23,6 +23,14 @@ pnpm typecheck     # tsc --noEmit only
 There is no test runner yet. Verification is manual: build, install in Tampermonkey,
 exercise the menu commands on a live Claude research conversation.
 
+## Parallel development
+
+When multiple tasks are being worked on in parallel, each task should be developed
+in its own **git worktree** branched off the **latest `dev` branch** — not in the
+shared working copy. This keeps concurrent work isolated and avoids cross-task
+interference. Pull/refresh `dev` before creating the worktree so every task starts
+from current tip.
+
 ## Architecture
 
 Single userscript, bundled by **Vite + vite-plugin-monkey**. The userscript
@@ -45,6 +53,33 @@ Data flow: `fetch` patch → capture store → extractor → markdown renderer.
   expects `[^n]` markers already in `body`, emits a matching `[^n]:` list.
 - `src/types.ts` — captured-response and artifact shapes. Intentionally loose
   until the schema is reverse-engineered.
+
+## Styling
+
+UI styles live in a **separate `.css` source file**, not in inline `el.style`
+assignments. They are inlined into the single bundled userscript at build time —
+no second asset is shipped and nothing is fetched at runtime.
+
+- Author CSS in `src/ui.css`. Import it as a **string** with Vite's `?inline`
+  query, then inject once via `GM_addStyle`:
+  ```ts
+  import css from './ui.css?inline';   // compiled to a string literal in the bundle
+  GM_addStyle(css);                     // inject once, before mounting UI
+  ```
+- `GM_addStyle` must be listed in the `grant` array in `vite.config.ts` (grants
+  are generated from there, never hand-written).
+- **Prefix every class with `cae-`.** `GM_addStyle` injects *global* rules into
+  Claude's own page, so unprefixed names risk colliding with Claude's CSS. The
+  `cae-` prefix matches the existing convention used for element IDs.
+- Authoring CSS externally (vs. `Object.assign(el.style, …)`) unlocks
+  `:hover`/`:focus`, media queries, and `@keyframes`, and keeps DOM construction
+  separate from presentation.
+
+**Why not Tampermonkey `@resource`?** Tampermonkey *can* attach a separate CSS
+asset via `@resource` + `GM_getResourceText`, but that requires hosting the file
+at a URL and adds an install-time network dependency. For our own small
+stylesheet, compiling it into the one `.user.js` via Vite is simpler and keeps the
+artifact self-contained.
 
 ## Key constraints
 
