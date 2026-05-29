@@ -1,21 +1,24 @@
 {
   "name": "claude-artifact-exporter",
   "version": "0.1.0",
-  "description": "Export artifacts and transcripts from a Claude data-export conversations.json",
+  "description": "Tampermonkey userscript that extracts Claude research artifacts to Markdown, preserving inline references that the native export drops.",
   "type": "module",
-  "bin": {
-    "claude-artifact-exporter": "bin/cli.js"
-  },
   "scripts": {
-    "test": "node --test",
-    "start": "node bin/cli.js"
-  },
-  "engines": {
-    "node": ">=20"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint . && tsc --noEmit",
+    "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "typescript-eslint": "^8.60.0"
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vite": "^6.0.0",
+    "vite-plugin-monkey": "^5.0.0",
+    "vitest": "^3.0.0"
   }
 }
