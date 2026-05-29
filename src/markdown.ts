@@ -1,29 +1,28 @@
-import type { ExtractedArtifact } from './types';
+import type { ArtifactDoc } from './types';
+import { renderFootnotes } from './footnotes';
 
 /**
- * Renders an extracted artifact to Markdown using footnote-style references
- * ([^1] markers + a reference list at the bottom), which round-trips cleanly
- * into Obsidian and most Markdown viewers.
+ * Renders an artifact to a complete Markdown document:
  *
- * Assumes `artifact.body` already contains [^n] markers placed by the extractor,
- * matching `artifact.references[].index`.
+ *   # <title>
+ *
+ *   <body with [^n] markers>
+ *
+ *   ---
+ *
+ *   [^1]: <label> — <url>
+ *
+ * The reference section (and its `---` separator) is omitted when the artifact
+ * has no citations. Footnote style round-trips cleanly into Obsidian.
  */
-export function renderMarkdown(artifact: ExtractedArtifact): string {
+export function renderArtifactMarkdown(doc: ArtifactDoc): string {
+  const { body, references } = renderFootnotes(doc.content, doc.citations);
+
   const parts: string[] = [];
-
-  if (artifact.title) {
-    parts.push(`# ${artifact.title}`, '');
+  if (doc.title) parts.push(`# ${doc.title}`, '');
+  parts.push(body.trim());
+  if (references.length > 0) {
+    parts.push('', '---', '', references.join('\n'));
   }
-
-  parts.push(artifact.body.trim());
-
-  if (artifact.references.length > 0) {
-    parts.push('', '---', '');
-    for (const ref of artifact.references) {
-      const label = ref.title ? `${ref.title} — ${ref.url}` : ref.url;
-      parts.push(`[^${ref.index}]: ${label}`);
-    }
-  }
-
   return parts.join('\n') + '\n';
 }
