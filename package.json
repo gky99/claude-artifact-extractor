@@ -1,0 +1,21 @@
+{
+  "name": "claude-artifact-exporter",
+  "version": "0.1.0",
+  "description": "Export artifacts and transcripts from a Claude data-export conversations.json",
+  "type": "module",
+  "bin": {
+    "claude-artifact-exporter": "bin/cli.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "start": "node bin/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "typescript-eslint": "^8.60.0"
+  }
+}
