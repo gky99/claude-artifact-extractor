@@ -59,29 +59,20 @@ export interface RawArtifactInput {
 export interface RawMdCitation {
   uuid?: string;
   title?: string;
-  url: string;
+  url?: string;
   metadata?: { preview_title?: string };
   /** UTF-16 offsets into the artifact `content`. */
-  start_index: number;
-  end_index: number;
+  start_index?: number;
+  end_index?: number;
 }
 
-/** A normalized citation ready for rendering. */
-export interface Citation {
-  /** Display label: preview_title || title || url. */
+/** A deduped, named source ready for the reference list (computed output). */
+export interface Reference {
+  /** Footnote identifier, e.g. "Emilevankrieken" (no spaces, no brackets). */
+  name: string;
+  /** Human-friendly description: preview_title || title. May be ''. */
   label: string;
+  /** Source URL, or '' when the citation had none. */
   url: string;
-  /** UTF-16 offsets into ArtifactDoc.content. */
-  start: number;
-  end: number;
 }
 
-/** A normalized artifact ready for markdown rendering. */
-export interface ArtifactDoc {
-  id: string;
-  title: string;
-  /** Clean markdown, no inline citation markers. */
-  content: string;
-  citations: Citation[];
-  versionUuid: string;
-}

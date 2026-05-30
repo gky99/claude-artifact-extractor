@@ -16,3 +16,9 @@ declare function GM_setClipboard(
   data: string,
   type?: 'text' | 'html' | { type?: string; mimetype?: string },
 ): void;
+
+declare function GM_addStyle(css: string): HTMLStyleElement;
+
+declare function GM_getValue<T = unknown>(name: string, defaultValue?: T): T;
+
+declare function GM_setValue(name: string, value: unknown): void;

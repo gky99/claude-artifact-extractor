@@ -1,25 +1,25 @@
-import type { ArtifactDoc } from './types';
+import type { RawArtifactInput } from './types';
 import { renderFootnotes } from './footnotes';
 
 /**
- * Renders an artifact to a complete Markdown document:
+ * Renders a raw artifact input to a complete Markdown document:
  *
  *   # <title>
  *
- *   <body with [^n] markers>
+ *   <body with [^name] markers>
  *
  *   ---
  *
- *   [^1]: <label> — <url>
+ *   [^name]: <label> — <url>
  *
- * The reference section (and its `---` separator) is omitted when the artifact
- * has no citations. Footnote style round-trips cleanly into Obsidian.
+ * The reference section (and its `---` separator) is omitted when there are no
+ * citations; the heading is omitted when there is no title.
  */
-export function renderArtifactMarkdown(doc: ArtifactDoc): string {
-  const { body, references } = renderFootnotes(doc.content, doc.citations);
+export function renderArtifactMarkdown(input: RawArtifactInput): string {
+  const { body, references } = renderFootnotes(input.content ?? '', input.md_citations);
 
   const parts: string[] = [];
-  if (doc.title) parts.push(`# ${doc.title}`, '');
+  if (input.title) parts.push(`# ${input.title}`, '');
   parts.push(body.trim());
   if (references.length > 0) {
     parts.push('', '---', '', references.join('\n'));

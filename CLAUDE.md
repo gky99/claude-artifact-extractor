@@ -20,8 +20,10 @@ pnpm lint          # eslint + tsc --noEmit
 pnpm typecheck     # tsc --noEmit only
 ```
 
-There is no test runner yet. Verification is manual: build, install in Tampermonkey,
-exercise the menu commands on a live Claude research conversation.
+Unit tests run on **vitest** (`pnpm test`), covering the pure modules
+(`citations.ts`, `footnotes.ts`, `conversation.ts`, `markdown.ts`). UI, capture,
+and persistence are still verified manually: build, install in Tampermonkey, and
+exercise the menu commands and the floating popover on a live Claude conversation.
 
 ## Parallel development
 
@@ -38,7 +40,8 @@ metadata block (name, `@match https://claude.ai/*`, `@run-at document-start`,
 `@grant` list) is **generated from `vite.config.ts`** — edit grants/matches there,
 never in a hand-written header.
 
-Data flow: `fetch` patch → capture store → extractor → markdown renderer.
+Data flow: `fetch` patch → capture store → `findArtifacts` (raw selection) →
+`resolveReferences` (dedup + naming) → footnote placement → markdown renderer.
 
 - `src/main.ts` — entry. Installs the interceptor immediately, then registers all
   Tampermonkey menu commands (export-to-download, export-to-clipboard, and the
@@ -47,12 +50,22 @@ Data flow: `fetch` patch → capture store → extractor → markdown renderer.
   fetch, not the sandboxed copy) and stashes responses matching `/api/`. Responses
   are **cloned before reading** so the app's own consumer is never disturbed;
   capture failures are swallowed so interception can never break the page.
-- `src/extractor.ts` — captured JSON → normalized `ExtractedArtifact`.
-  **Currently a stub that throws** — the real Claude schema is unknown.
-- `src/markdown.ts` — `ExtractedArtifact` → Markdown. Uses footnote references:
-  expects `[^n]` markers already in `body`, emits a matching `[^n]:` list.
-- `src/types.ts` — captured-response and artifact shapes. Intentionally loose
-  until the schema is reverse-engineered.
+- `src/conversation.ts` — captured JSON → raw artifact selection (`findArtifacts`),
+  keeping the final version per artifact `id`. No normalization: raw
+  `RawArtifactInput` shapes flow through untouched until export.
+- `src/citations.ts` — `resolveReferences`: dedupes sources (by URL, else title),
+  assigns each a footnote name from its `title` slug (spaces→`_`, brackets stripped,
+  collisions suffixed `-2`), and keeps a friendly label (`preview_title`).
+- `src/footnotes.ts` — inserts named `[^name]` markers at the end of each
+  citation's line/table-cell, dedupes repeated sources within a paragraph, and
+  emits a deduplicated reference list.
+- `src/markdown.ts` — `RawArtifactInput` → Markdown (title + body + footnote list).
+- `src/types.ts` — captured-response and raw artifact shapes plus the computed
+  `Reference` type.
+- `src/ui.ts` / `src/ui.css` — floating popover listing artifacts with a Copy
+  action; all styles live in `ui.css`, inlined at build via `?inline` + `GM_addStyle`.
+- `src/config.ts` — `Config…` menu command opening a panel that persists a dummy
+  setting via `GM_getValue`/`GM_setValue`.
 
 ## Styling
 
@@ -89,10 +102,11 @@ artifact self-contained.
   be in place before the app issues requests.
 - **Never let interception throw into the app.** All capture work is wrapped so a
   failure logs/silently drops the captured response rather than breaking Claude.
-- **Schema is undiscovered.** Before implementing `extractor.ts`, run the
-  discovery workflow: menu → "Dump captured responses", inspect JSON in DevTools
-  (also on `window.__claudeCaptured`), then write extraction against the real shape.
-  Tighten `src/types.ts` at the same time.
+- **Schema is reverse-engineered.** Extraction lives in `src/conversation.ts`
+  (`findArtifacts`) against the real conversation-load shape; a captured
+  `sample-response.json` fixture drives the unit tests. The discovery menu command
+  (Dump captured responses → `window.__claudeCaptured`) remains for diagnosing
+  schema drift.
 
 ## Design decisions (from initial brainstorming)
 

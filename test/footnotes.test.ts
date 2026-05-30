@@ -1,62 +1,124 @@
-import { test, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderFootnotes } from '../src/footnotes';
-import type { Citation } from '../src/types';
+import type { RawMdCitation } from '../src/types';
 
-test('inserts a marker at the citation end_index and lists the reference', () => {
-  const content = 'Hello world.';
-  const citations: Citation[] = [
-    { label: 'Greeting', url: 'https://example.com', start: 0, end: 5 },
-  ];
-  const { body, references } = renderFootnotes(content, citations);
-  expect(body).toBe('Hello[^1] world.');
-  expect(references).toEqual(['[^1]: Greeting — https://example.com']);
+const cite = (c: Partial<RawMdCitation>): RawMdCitation => c;
+
+describe('renderFootnotes — placement', () => {
+  it('moves the marker to the end of the prose line (newline boundary)', () => {
+    const content = 'First line here.\nSecond line.';
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'Src', url: 'u', start_index: 0, end_index: 6 }),
+    ]);
+    expect(body).toBe('First line here.[^Src]\nSecond line.');
+  });
+
+  it('places the marker before a <br> (and <br/>)', () => {
+    const { body } = renderFootnotes('a<br>b', [
+      cite({ title: 'X', url: 'u', start_index: 0, end_index: 1 }),
+    ]);
+    expect(body).toBe('a[^X]<br>b');
+    const r2 = renderFootnotes('a<br/>b', [
+      cite({ title: 'X', url: 'u', start_index: 0, end_index: 1 }),
+    ]);
+    expect(r2.body).toBe('a[^X]<br/>b');
+  });
+
+  it('places the marker before the closing pipe inside a table row, trimming the space', () => {
+    const content = '| c1 | val here |';
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'Y', url: 'u', start_index: 11, end_index: 15 }),
+    ]);
+    expect(body).toBe('| c1 | val here[^Y] |');
+  });
+
+  it('ignores | as a boundary outside a table row', () => {
+    const content = 'pipes | are | literal';
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'Z', url: 'u', start_index: 0, end_index: 5 }),
+    ]);
+    expect(body).toBe('pipes | are | literal[^Z]');
+  });
+
+  it('counts UTF-16 offsets correctly when placing at line end past a non-BMP char', () => {
+    const content = 'a😀b\nnext'; // 😀 = U+1F600 (2 UTF-16 units), 'b' at index 3
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'S', url: 'u', start_index: 0, end_index: 1 }),
+    ]);
+    expect(body).toBe('a😀b[^S]\nnext');
+  });
+
+  it('dedupes repeated markers for the same source within a paragraph', () => {
+    const content = 'x and y here.';
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'A', url: 'same', start_index: 0, end_index: 5 }),
+      cite({ title: 'A', url: 'same', start_index: 6, end_index: 12 }),
+    ]);
+    expect(body).toBe('x and y here.[^A]');
+  });
+
+  it('renders distinct sources at the same point as consecutive markers', () => {
+    const content = 'foo bar.';
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'A', url: 'u1', start_index: 0, end_index: 3 }),
+      cite({ title: 'B', url: 'u2', start_index: 4, end_index: 7 }),
+    ]);
+    expect(body).toBe('foo bar.[^A][^B]');
+  });
+
+  it('lists a citation with no offset but inserts no marker', () => {
+    const content = 'untouched body';
+    const { body, references } = renderFootnotes(content, [
+      cite({ title: 'NoOffset', url: 'u' }),
+    ]);
+    expect(body).toBe('untouched body');
+    expect(references).toEqual(['[^NoOffset]: NoOffset — u']);
+  });
+
+  it('handles <br /> with a space', () => {
+    const { body } = renderFootnotes('a<br />b', [
+      cite({ title: 'X', url: 'u', start_index: 0, end_index: 1 }),
+    ]);
+    expect(body).toBe('a[^X]<br />b');
+  });
+
+  it('never places a marker before a table row opening pipe', () => {
+    const content = '| cell data |';
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'T', url: 'u', start_index: 0, end_index: 0 }),
+    ]);
+    expect(body).toBe('| cell data[^T] |');
+  });
+
+  it('hugs the last word when a citation ends exactly on an internal cell separator', () => {
+    const content = '| a | b | c |';
+    const { body } = renderFootnotes(content, [
+      cite({ title: 'P', url: 'u', start_index: 2, end_index: 4 }),
+    ]);
+    expect(body).toBe('| a[^P] | b | c |');
+  });
 });
 
-test('numbers citations in array order without deduping shared urls', () => {
-  const content = 'AB';
-  const citations: Citation[] = [
-    { label: 'one', url: 'https://same.com', start: 0, end: 1 },
-    { label: 'two', url: 'https://same.com', start: 1, end: 2 },
-  ];
-  const { body, references } = renderFootnotes(content, citations);
-  expect(body).toBe('A[^1]B[^2]');
-  expect(references).toEqual([
-    '[^1]: one — https://same.com',
-    '[^2]: two — https://same.com',
-  ]);
-});
+describe('renderFootnotes — reference list', () => {
+  it('emits one line per unique reference with label and url', () => {
+    const { references } = renderFootnotes('ab', [
+      cite({ title: 'A', url: 'u', metadata: { preview_title: 'Friendly' }, start_index: 0, end_index: 1 }),
+      cite({ title: 'A', url: 'u', metadata: { preview_title: 'Friendly' }, start_index: 1, end_index: 2 }),
+    ]);
+    expect(references).toEqual(['[^A]: Friendly — u']);
+  });
 
-test('two citations ending at the same offset render consecutive markers in order', () => {
-  const content = 'AB';
-  const citations: Citation[] = [
-    { label: 'one', url: 'https://a.com', start: 0, end: 2 },
-    { label: 'two', url: 'https://b.com', start: 1, end: 2 },
-  ];
-  const { body } = renderFootnotes(content, citations);
-  expect(body).toBe('AB[^1][^2]');
-});
+  it('omits the url segment when there is no url', () => {
+    const { references } = renderFootnotes('ab', [
+      cite({ title: 'NoUrl', metadata: { preview_title: 'P' }, start_index: 0, end_index: 1 }),
+    ]);
+    expect(references).toEqual(['[^NoUrl]: P']);
+  });
 
-test('uses UTF-16 offsets so markers land correctly after non-BMP characters', () => {
-  const emoji = 'a😀b'; // 😀 is U+1F600, 2 UTF-16 units; "b" is at index 3
-  const citations: Citation[] = [
-    { label: 's', url: 'https://e.com', start: 0, end: 3 },
-  ];
-  const { body } = renderFootnotes(emoji, citations);
-  expect(body).toBe('a😀[^1]b');
-});
-
-test('falls back to an unanchored reference list when offsets are missing', () => {
-  const content = 'No anchors here.';
-  const citations: Citation[] = [
-    { label: 'src', url: 'https://x.com', start: -1, end: -1 },
-  ];
-  const { body, references } = renderFootnotes(content, citations);
-  expect(body).toBe('No anchors here.');
-  expect(references).toEqual(['[^1]: src — https://x.com']);
-});
-
-test('returns empty references for no citations', () => {
-  const { body, references } = renderFootnotes('plain', []);
-  expect(body).toBe('plain');
-  expect(references).toEqual([]);
+  it('uses the url alone when there is no title/label', () => {
+    const { references } = renderFootnotes('ab', [
+      cite({ url: 'https://x', start_index: 0, end_index: 1 }),
+    ]);
+    expect(references).toEqual(['[^ref-1]: https://x']);
+  });
 });

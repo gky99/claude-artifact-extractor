@@ -19,6 +19,9 @@ export default defineConfig({
         grant: [
           'GM_registerMenuCommand',
           'GM_setClipboard',
+          'GM_addStyle',
+          'GM_getValue',
+          'GM_setValue',
         ],
       },
     }),

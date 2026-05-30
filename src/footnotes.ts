@@ -1,44 +1,90 @@
-import type { Citation } from './types';
+import type { RawMdCitation } from './types';
+import { resolveReferences } from './citations';
 
 export interface FootnoteResult {
-  /** The artifact content with `[^n]` markers inserted. */
+  /** The artifact content with `[^name]` markers inserted at line/cell ends. */
   body: string;
-  /** Reference definition lines, e.g. `[^1]: Label — https://url`. */
+  /** Reference definition lines, e.g. `[^name]: Label — https://url`. */
   references: string[];
 }
 
+const BR_RE = /<br\s*\/?>/i;
+
 /**
- * Inserts `[^n]` markers into `content` at each citation's `end` offset and
- * builds a matching reference list. Citations are numbered in array order with
- * NO deduplication (each citation is its own footnote).
+ * Inserts named `[^name]` markers at the end of each citation's line (or table
+ * cell), deduplicating repeated sources within a paragraph, and builds a
+ * deduplicated reference list. Offsets are UTF-16 string indices.
  *
- * Offsets are UTF-16 string indices (plain `String.prototype.slice`). Markers are
- * inserted in descending `end` order so earlier offsets remain valid as we go.
- * When two citations share an `end`, they are emitted in ascending citation
- * number so the rendered order reads `[^1][^2]`.
+ * Boundary precedence (nearest wins, scanning forward from `end_index`):
+ *   - a `<br>` / `<br/>` / `<br />` (case-insensitive),
+ *   - a `|` cell separator, only when the current source line is a table row
+ *     (its trimmed text starts with `|`),
+ *   - the end of the line (`\n`) or end of string.
+ * Trailing spaces/tabs before the boundary are skipped so the marker attaches to
+ * the last visible character.
  *
- * A citation with a non-positive/invalid `end` (no offset data) gets no inline
- * marker but is still listed in the reference list, so no source is lost.
+ * Citations with no/invalid offset get no marker but still appear in the list.
  */
-export function renderFootnotes(content: string, citations: Citation[]): FootnoteResult {
-  const references = citations.map(
-    (c, i) => `[^${i + 1}]: ${c.label} — ${c.url}`,
-  );
+export function renderFootnotes(
+  content: string,
+  mdCitations: RawMdCitation[] | undefined,
+): FootnoteResult {
+  const { references, nameByIndex } = resolveReferences(mdCitations);
+  const list = Array.isArray(mdCitations) ? mdCitations : [];
 
-  // Pair each citation with its 1-based number, keep only insertable ones.
-  const insertable = citations
-    .map((c, i) => ({ num: i + 1, end: c.end }))
-    .filter((x) => Number.isInteger(x.end) && x.end >= 0 && x.end <= content.length);
+  // insertion point -> ordered, de-duplicated footnote names for that segment.
+  const byPoint = new Map<number, string[]>();
+  list.forEach((c, i) => {
+    const name = nameByIndex[i];
+    if (!name || !c) return;
+    const end = c.end_index;
+    if (typeof end !== 'number' || !Number.isInteger(end) || end < 0 || end > content.length) return;
+    const point = boundaryAfter(content, end);
+    const names = byPoint.get(point) ?? [];
+    if (!names.includes(name)) names.push(name); // intra-paragraph dedup
+    byPoint.set(point, names);
+  });
 
-  // Insert from the end of the string backwards. Sort by end descending; for
-  // equal ends, higher number first so that after both inserts the lower number
-  // ends up to the left (-> "[^1][^2]").
-  insertable.sort((a, b) => (b.end - a.end) || (b.num - a.num));
-
+  // Insert from the end backwards so earlier offsets stay valid.
   let body = content;
-  for (const { num, end } of insertable) {
-    body = body.slice(0, end) + `[^${num}]` + body.slice(end);
+  for (const point of [...byPoint.keys()].sort((a, b) => b - a)) {
+    const marker = byPoint.get(point)!.map((n) => `[^${n}]`).join('');
+    body = body.slice(0, point) + marker + body.slice(point);
   }
 
-  return { body, references };
+  const refLines = references.map((r) => {
+    if (r.label && r.url) return `[^${r.name}]: ${r.label} — ${r.url}`;
+    if (r.url) return `[^${r.name}]: ${r.url}`;
+    return `[^${r.name}]: ${r.label || r.name}`;
+  });
+
+  return { body, references: refLines };
+}
+
+/** Index at which to insert a marker for a citation ending at `end`. */
+function boundaryAfter(content: string, end: number): number {
+  const nextNl = content.indexOf('\n', end);
+  const lineEnd = nextNl === -1 ? content.length : nextNl;
+  const lineStart = content.lastIndexOf('\n', end - 1) + 1;
+  const isTableRow = content.slice(lineStart, lineEnd).trimStart().startsWith('|');
+
+  let best = lineEnd;
+
+  const brMatch = BR_RE.exec(content.slice(end, lineEnd));
+  if (brMatch) best = Math.min(best, end + brMatch.index);
+
+  if (isTableRow) {
+    // The first `|` is the row's leading delimiter; a marker never goes before it.
+    const leadingPipe = content.indexOf('|', lineStart);
+    const pipe = content.indexOf('|', Math.max(end, leadingPipe + 1));
+    if (pipe !== -1 && pipe < lineEnd) best = Math.min(best, pipe);
+  }
+
+  // Skip trailing horizontal whitespace so the marker hugs the last word.
+  // Floor at lineStart (never crosses a non-space char, so it stays in-cell).
+  let insert = best;
+  while (insert > lineStart && (content[insert - 1] === ' ' || content[insert - 1] === '\t')) {
+    insert--;
+  }
+  return insert;
 }
