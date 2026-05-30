@@ -25,27 +25,34 @@ describe('toFileName', () => {
 });
 
 describe('buildObsidianUri', () => {
-  it('builds a new-note URI with encoded vault + folder/file and clipboard flag', () => {
-    expect(buildObsidianUri({ vault: 'My Vault', folder: 'Clippings', title: 'My Report' })).toBe(
-      'obsidian://new?vault=My%20Vault&file=Clippings%2FMy%20Report&clipboard=true',
+  // Format mirrors obsidianmd/obsidian-clipper: file then vault, a BARE `&clipboard`
+  // flag (tells Obsidian to read the body from the clipboard), then a `&content=`
+  // fallback Obsidian only uses if it cannot access the clipboard.
+  it('builds a new-note URI: encoded file then vault, bare clipboard flag + content fallback', () => {
+    const uri = buildObsidianUri({ vault: 'My Vault', folder: 'Clippings', title: 'My Report' });
+    expect(uri.startsWith('obsidian://new?file=Clippings%2FMy%20Report&vault=My%20Vault&clipboard&content=')).toBe(
+      true,
     );
   });
 
   it('omits the folder segment when folder is empty (vault root)', () => {
-    expect(buildObsidianUri({ vault: 'V', folder: '', title: 'Note' })).toBe(
-      'obsidian://new?vault=V&file=Note&clipboard=true',
-    );
+    const uri = buildObsidianUri({ vault: 'V', folder: '', title: 'Note' });
+    expect(uri.startsWith('obsidian://new?file=Note&vault=V&clipboard&content=')).toBe(true);
   });
 
   it('strips leading/trailing slashes on the folder', () => {
-    expect(buildObsidianUri({ vault: 'V', folder: '/sub/dir/', title: 'Note' })).toBe(
-      'obsidian://new?vault=V&file=sub%2Fdir%2FNote&clipboard=true',
-    );
+    const uri = buildObsidianUri({ vault: 'V', folder: '/sub/dir/', title: 'Note' });
+    expect(uri.startsWith('obsidian://new?file=sub%2Fdir%2FNote&vault=V&clipboard&content=')).toBe(true);
   });
 
   it('sanitizes the title through toFileName', () => {
-    expect(buildObsidianUri({ vault: 'V', folder: '', title: 'a/b:c' })).toBe(
-      'obsidian://new?vault=V&file=abc&clipboard=true',
-    );
+    const uri = buildObsidianUri({ vault: 'V', folder: '', title: 'a/b:c' });
+    expect(uri.startsWith('obsidian://new?file=abc&vault=V&clipboard&content=')).toBe(true);
+  });
+
+  it('uses a bare clipboard flag (not clipboard=true) and includes a content fallback', () => {
+    const uri = buildObsidianUri({ vault: 'V', folder: '', title: 'N' });
+    expect(uri).toContain('&clipboard&content=');
+    expect(uri).not.toContain('clipboard=true');
   });
 });

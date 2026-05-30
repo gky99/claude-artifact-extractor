@@ -22,14 +22,28 @@ export function toFileName(title: string | undefined): string {
   return cleaned || 'Untitled artifact';
 }
 
+/** Shown inside the note only if Obsidian cannot read the clipboard (e.g. some
+ *  Linux setups). On Windows/macOS the clipboard path is used and this is ignored. */
+const CLIPBOARD_FALLBACK_MESSAGE =
+  'Obsidian could not read the clipboard. Re-run “Save to Obsidian”, or paste the note manually.';
+
 /** Builds an `obsidian://new` URI that pulls the note body from the clipboard.
- *  folder '' targets the vault root; leading/trailing slashes are stripped. */
+ *  folder '' targets the vault root; leading/trailing slashes are stripped.
+ *
+ *  Format mirrors obsidianmd/obsidian-clipper: `file` then `vault`, a BARE
+ *  `&clipboard` flag (Obsidian reads the body from the clipboard, avoiding the
+ *  URL-length limit), then a `&content=` fallback Obsidian uses only when it
+ *  cannot access the clipboard. */
 export function buildObsidianUri(opts: { vault: string; folder: string; title: string }): string {
   const filename = toFileName(opts.title);
   const folder = opts.folder.replace(/^\/+|\/+$/g, '');
   const filePath = folder ? `${folder}/${filename}` : filename;
   const enc = encodeURIComponent;
-  return `obsidian://new?vault=${enc(opts.vault)}&file=${enc(filePath)}&clipboard=true`;
+  return (
+    `obsidian://new?file=${enc(filePath)}` +
+    `&vault=${enc(opts.vault)}` +
+    `&clipboard&content=${enc(CLIPBOARD_FALLBACK_MESSAGE)}`
+  );
 }
 
 /** Copies the rendered Markdown to the clipboard. */
@@ -80,23 +94,22 @@ export async function downloadArtifact(markdown: string, title: string | undefin
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-/** Copies the body to the clipboard and fires `obsidian://new` so Obsidian
+/** Copies the body to the clipboard and opens `obsidian://new` so Obsidian
  *  writes the note. Returns false (and does nothing) when the vault is unset.
  *  No post-fire error handling: an unregistered protocol fails silently. */
 export function saveToObsidian(markdown: string, title: string | undefined, s: Settings): boolean {
   if (!s.obsidianVault.trim()) return false;
   GM_setClipboard(markdown, 'text');
-  fireUri(buildObsidianUri({ vault: s.obsidianVault, folder: s.obsidianFolder, title: title ?? '' }));
+  openObsidianUri(buildObsidianUri({ vault: s.obsidianVault, folder: s.obsidianFolder, title: title ?? '' }));
   return true;
 }
 
-/** Fires a custom-protocol URL via a transient hidden iframe so the host tab
- *  never navigates and an unregistered scheme fails quietly. */
-function fireUri(uri: string): void {
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = uri;
-  document.body.appendChild(iframe);
-  // keep the iframe alive briefly so the OS protocol handler can read src
-  setTimeout(() => iframe.remove(), 1000);
+/** Launches a custom-protocol URL via a TOP-LEVEL navigation of the page.
+ *  This mirrors obsidian-clipper, which navigates the current tab
+ *  (`tabs.update({ url })`). A hidden-iframe `src` does NOT work: Chrome blocks
+ *  external-protocol launches initiated from sub-frames. Top-level navigation to
+ *  an external scheme is intercepted by the browser, so the page is retained
+ *  (Obsidian opens; Claude stays put). Runs in the page realm via unsafeWindow. */
+function openObsidianUri(uri: string): void {
+  unsafeWindow.location.href = uri;
 }
