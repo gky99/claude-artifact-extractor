@@ -53,10 +53,10 @@
 }
 
 .cae-copy,
+.cae-download,
+.cae-obsidian,
 .cae-config-save,
 .cae-config-close {
-  align-self: flex-start;
-  margin-top: 2px;
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -90,11 +90,6 @@
   font-weight: 600;
 }
 
-.cae-config-note {
-  margin: 0;
-  opacity: 0.75;
-}
-
 .cae-config-input {
   padding: 6px 8px;
   border-radius: 6px;
@@ -104,7 +99,26 @@
   font: 13px system-ui, sans-serif;
 }
 
-.cae-config-status {
-  opacity: 0.8;
+.cae-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.cae-config-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cae-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cae-config-label {
   font-size: 12px;
+  opacity: 0.85;
 }

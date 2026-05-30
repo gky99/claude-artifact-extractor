@@ -21,7 +21,7 @@ pnpm typecheck     # tsc --noEmit only
 ```
 
 Unit tests run on **vitest** (`pnpm test`), covering the pure modules
-(`citations.ts`, `footnotes.ts`, `conversation.ts`, `markdown.ts`). UI, capture,
+(`citations.ts`, `footnotes.ts`, `conversation.ts`, `markdown.ts`, `settings.ts`, `exporters.ts`). UI, capture,
 and persistence are still verified manually: build, install in Tampermonkey, and
 exercise the menu commands and the floating popover on a live Claude conversation.
 
@@ -66,13 +66,19 @@ Data flow: `fetch` patch → capture store → `findArtifacts` (raw selection) �
 - `src/footnotes.ts` — inserts named `[^name]` markers at the end of each
   citation's line/table-cell, dedupes repeated sources within a paragraph, and
   emits a deduplicated reference list.
-- `src/markdown.ts` — `RawArtifactInput` → Markdown (title + body + footnote list).
+- `src/markdown.ts` — `RawArtifactInput` → Markdown (body + footnote list). The title is **not** rendered as a heading; it is used only as the export filename.
 - `src/types.ts` — captured-response and raw artifact shapes plus the computed
   `Reference` type.
 - `src/ui.ts` / `src/ui.css` — floating popover listing artifacts with a Copy
   action; all styles live in `ui.css`, inlined at build via `?inline` + `GM_addStyle`.
-- `src/config.ts` — `Config…` menu command opening a panel that persists a dummy
-  setting via `GM_getValue`/`GM_setValue`.
+- `src/config.ts` — `Config…` menu command opening a settings panel: checkboxes
+  that toggle each row action (Copy / Download / Save to Obsidian) and the Obsidian
+  vault + folder path, persisted via settings.ts.
+- `src/settings.ts` — typed, persisted settings (GM_getValue/GM_setValue): which
+  action buttons show + the Obsidian vault/folder.
+- `src/exporters.ts` — the three row actions (copy; download via showSaveFilePicker
+  with anchor fallback; save-to-Obsidian via obsidian://new + clipboard) plus pure
+  toFileName/buildObsidianUri helpers.
 
 ## Styling
 

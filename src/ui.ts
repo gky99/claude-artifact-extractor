@@ -1,6 +1,8 @@
 import { getLatestConversation } from './fetch-interceptor';
 import { findArtifacts } from './conversation';
 import { renderArtifactMarkdown } from './markdown';
+import { getSettings, type Settings } from './settings';
+import { copyArtifact, downloadArtifact, saveToObsidian } from './exporters';
 import type { RawArtifactInput } from './types';
 
 const BTN_ID = 'cae-export-button';
@@ -31,6 +33,7 @@ function togglePopover(): void {
 function renderPopover(): void {
   const conversation = getLatestConversation();
   const artifacts = findArtifacts(conversation);
+  const settings = getSettings();
 
   const popover = document.createElement('div');
   popover.id = POPOVER_ID;
@@ -44,14 +47,22 @@ function renderPopover(): void {
     popover.appendChild(empty);
   } else {
     artifacts.forEach((artifact) => {
-      popover.appendChild(renderRow(artifact));
+      popover.appendChild(renderRow(artifact, settings));
     });
   }
 
   document.body.appendChild(popover);
 }
 
-function renderRow(artifact: RawArtifactInput): HTMLElement {
+/** Briefly swaps a button's label, then restores it. */
+function flash(btn: HTMLButtonElement, msg: string, revert: string): void {
+  btn.textContent = msg;
+  setTimeout(() => {
+    btn.textContent = revert;
+  }, 1500);
+}
+
+function renderRow(artifact: RawArtifactInput, settings: Settings): HTMLElement {
   const row = document.createElement('div');
   row.className = 'cae-row';
 
@@ -63,18 +74,48 @@ function renderRow(artifact: RawArtifactInput): HTMLElement {
   meta.className = 'cae-row-meta';
   meta.textContent = `${artifact.md_citations?.length ?? 0} reference(s)`;
 
-  const copy = document.createElement('button');
-  copy.type = 'button';
-  copy.className = 'cae-copy';
-  copy.textContent = 'Copy Markdown';
-  copy.addEventListener('click', () => {
-    GM_setClipboard(renderArtifactMarkdown(artifact), 'text');
-    copy.textContent = 'Copied!';
-    setTimeout(() => {
-      copy.textContent = 'Copy Markdown';
-    }, 1500);
-  });
+  row.append(title, meta);
 
-  row.append(title, meta, copy);
+  const actions = document.createElement('div');
+  actions.className = 'cae-row-actions';
+
+  if (settings.showCopy) {
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'cae-copy';
+    copy.textContent = 'Copy';
+    copy.addEventListener('click', () => {
+      copyArtifact(renderArtifactMarkdown(artifact));
+      flash(copy, 'Copied!', 'Copy');
+    });
+    actions.appendChild(copy);
+  }
+
+  if (settings.showDownload) {
+    const download = document.createElement('button');
+    download.type = 'button';
+    download.className = 'cae-download';
+    download.textContent = 'Download';
+    download.addEventListener('click', () => {
+      downloadArtifact(renderArtifactMarkdown(artifact), artifact.title).catch(() => {
+        flash(download, 'Download failed', 'Download');
+      });
+    });
+    actions.appendChild(download);
+  }
+
+  if (settings.showObsidian) {
+    const obsidian = document.createElement('button');
+    obsidian.type = 'button';
+    obsidian.className = 'cae-obsidian';
+    obsidian.textContent = 'Save to Obsidian';
+    obsidian.addEventListener('click', () => {
+      const ok = saveToObsidian(renderArtifactMarkdown(artifact), artifact.title, settings);
+      flash(obsidian, ok ? 'Sent to Obsidian ✓' : 'Set vault in Config…', 'Save to Obsidian');
+    });
+    actions.appendChild(obsidian);
+  }
+
+  if (actions.childElementCount > 0) row.appendChild(actions);
   return row;
 }

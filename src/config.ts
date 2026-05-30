@@ -1,17 +1,17 @@
-const PANEL_ID = 'cae-config-panel';
-const STORE_KEY = 'cae-dummy-setting';
+import { getSettings, saveSettings, type Settings } from './settings';
 
-/**
- * Toggles a floating config panel. Placeholder for now: it persists a single
- * text value via GM_setValue/GM_getValue and reads it back so persistence across
- * reloads is visible. No real settings are wired to behavior yet.
- */
+const PANEL_ID = 'cae-config-panel';
+
+/** Toggles a floating settings panel: which action buttons appear, plus the
+ *  Obsidian vault + folder used by "Save to Obsidian". Persists via settings.ts. */
 export function openConfigPanel(): void {
   const existing = document.getElementById(PANEL_ID);
   if (existing) {
     existing.remove();
     return;
   }
+
+  const settings = getSettings();
 
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
@@ -21,32 +21,26 @@ export function openConfigPanel(): void {
   heading.className = 'cae-config-heading';
   heading.textContent = 'Artifact Exporter — Config';
 
-  const note = document.createElement('p');
-  note.className = 'cae-config-note';
-  note.textContent =
-    'Placeholder settings. Save a value, reload the page, and reopen to confirm it persists.';
+  const copyCheck = makeCheckbox('Show "Copy" button', settings.showCopy);
+  const downloadCheck = makeCheckbox('Show "Download" button', settings.showDownload);
+  const obsidianCheck = makeCheckbox('Show "Save to Obsidian" button', settings.showObsidian);
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'cae-config-input';
-  input.placeholder = 'Type something…';
-  input.value = GM_getValue<string>(STORE_KEY, '');
-
-  const status = document.createElement('div');
-  status.className = 'cae-config-status';
-  const renderStored = (): void => {
-    const stored = GM_getValue<string>(STORE_KEY, '');
-    status.textContent = stored ? `Persisted value: ${stored}` : 'No value persisted yet.';
-  };
-  renderStored();
+  const vaultField = makeField('Obsidian vault name', 'e.g. My Vault', settings.obsidianVault);
+  const folderField = makeField('Folder path (blank = vault root)', 'e.g. Clippings', settings.obsidianFolder);
 
   const save = document.createElement('button');
   save.type = 'button';
   save.className = 'cae-config-save';
   save.textContent = 'Save';
   save.addEventListener('click', () => {
-    GM_setValue(STORE_KEY, input.value);
-    renderStored();
+    const next: Settings = {
+      showCopy: copyCheck.input.checked,
+      showDownload: downloadCheck.input.checked,
+      showObsidian: obsidianCheck.input.checked,
+      obsidianVault: vaultField.input.value,
+      obsidianFolder: folderField.input.value,
+    };
+    saveSettings(next);
     save.textContent = 'Saved ✓';
     setTimeout(() => {
       save.textContent = 'Save';
@@ -59,6 +53,42 @@ export function openConfigPanel(): void {
   close.textContent = 'Close';
   close.addEventListener('click', () => panel.remove());
 
-  panel.append(heading, note, input, save, status, close);
+  panel.append(
+    heading,
+    copyCheck.wrap,
+    downloadCheck.wrap,
+    obsidianCheck.wrap,
+    vaultField.wrap,
+    folderField.wrap,
+    save,
+    close,
+  );
   document.body.appendChild(panel);
+}
+
+function makeCheckbox(label: string, checked: boolean): { wrap: HTMLElement; input: HTMLInputElement } {
+  const wrap = document.createElement('label');
+  wrap.className = 'cae-config-check';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  const span = document.createElement('span');
+  span.textContent = label;
+  wrap.append(input, span);
+  return { wrap, input };
+}
+
+function makeField(label: string, placeholder: string, value: string): { wrap: HTMLElement; input: HTMLInputElement } {
+  const wrap = document.createElement('label');
+  wrap.className = 'cae-config-field';
+  const span = document.createElement('span');
+  span.className = 'cae-config-label';
+  span.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'cae-config-input';
+  input.placeholder = placeholder;
+  input.value = value;
+  wrap.append(span, input);
+  return { wrap, input };
 }

@@ -6,7 +6,7 @@ import { findArtifacts } from '../src/conversation';
 import type { RawArtifactInput, RawConversation } from '../src/types';
 
 describe('renderArtifactMarkdown', () => {
-  it('assembles title, body with named markers, and a deduped reference list', () => {
+  it('assembles body with named markers and a deduped reference list (no title heading)', () => {
     const input: RawArtifactInput = {
       id: 'a',
       type: 'text/markdown',
@@ -18,12 +18,12 @@ describe('renderArtifactMarkdown', () => {
       ],
     };
     expect(renderArtifactMarkdown(input)).toBe(
-      '# My Report\n\nClaim one.[^Smith]\nClaim two.[^Smith]\n\n---\n\n[^Smith]: Smith 2024 — https://a\n',
+      'Claim one.[^Smith]\nClaim two.[^Smith]\n\n---\n\n[^Smith]: Smith 2024 — https://a\n',
     );
   });
 
-  it('omits the heading when there is no title and the rule when there are no citations', () => {
-    const input: RawArtifactInput = { id: 'a', type: 't', content: 'Just body.' };
+  it('never emits a title heading and omits the rule when there are no citations', () => {
+    const input: RawArtifactInput = { id: 'a', type: 't', title: 'Has Title', content: 'Just body.' };
     expect(renderArtifactMarkdown(input)).toBe('Just body.\n');
   });
 
@@ -31,7 +31,7 @@ describe('renderArtifactMarkdown', () => {
     const path = fileURLToPath(new URL('../sample-response.json', import.meta.url));
     const conv = JSON.parse(readFileSync(path, 'utf8')) as RawConversation;
     const md = renderArtifactMarkdown(findArtifacts(conv)[0]);
-    expect(md).toContain('# How Obsidian Users Actually Build Their Second Brains');
+    expect(md.split('\n')[0]).not.toBe('# How Obsidian Users Actually Build Their Second Brains');
     const defs = md.match(/^\[\^[^\]]+\]: /gm) ?? [];
     expect(defs).toHaveLength(4); // 12 citations dedupe to 4 unique URLs
     const names = [...md.matchAll(/^\[\^([^\]]+)\]: /gm)].map((m) => m[1]);
