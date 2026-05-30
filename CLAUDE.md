@@ -33,6 +33,13 @@ shared working copy. This keeps concurrent work isolated and avoids cross-task
 interference. Pull/refresh `dev` before creating the worktree so every task starts
 from current tip.
 
+**Squash before merging back.** A worktree's branch may accumulate many small
+commits (TDD steps, review fixes). When integrating into `dev`, squash them into a
+**single commit** so `dev` history stays one-commit-per-task — e.g.
+`git reset --soft <pre-merge-base> && git commit` on `dev`, or
+`git merge --squash <branch>`. Do not preserve the intermediate commits or a
+`--no-ff` merge bubble on `dev`.
+
 ## Architecture
 
 Single userscript, bundled by **Vite + vite-plugin-monkey**. The userscript
