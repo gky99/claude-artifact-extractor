@@ -12,6 +12,8 @@ declare function GM_registerMenuCommand(
   accessKey?: string,
 ): number;
 
+declare function GM_unregisterMenuCommand(menuCmdId: number): void;
+
 declare function GM_setClipboard(
   data: string,
   type?: 'text' | 'html' | { type?: string; mimetype?: string },

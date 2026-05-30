@@ -18,6 +18,7 @@ export default defineConfig({
         'run-at': 'document-start',
         grant: [
           'GM_registerMenuCommand',
+          'GM_unregisterMenuCommand',
           'GM_setClipboard',
           'GM_addStyle',
           'GM_getValue',

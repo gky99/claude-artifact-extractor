@@ -28,6 +28,8 @@ export function openConfigPanel(): void {
   const vaultField = makeField('Obsidian vault name', 'e.g. My Vault', settings.obsidianVault);
   const folderField = makeField('Folder path (blank = vault root)', 'e.g. Clippings', settings.obsidianFolder);
 
+  const debugCheck = makeCheckbox('Enable debug capture (logs every API response)', settings.debug);
+
   const save = document.createElement('button');
   save.type = 'button';
   save.className = 'cae-config-save';
@@ -39,6 +41,7 @@ export function openConfigPanel(): void {
       showObsidian: obsidianCheck.input.checked,
       obsidianVault: vaultField.input.value,
       obsidianFolder: folderField.input.value,
+      debug: debugCheck.input.checked,
     };
     saveSettings(next);
     save.textContent = 'Saved ✓';
@@ -60,6 +63,7 @@ export function openConfigPanel(): void {
     obsidianCheck.wrap,
     vaultField.wrap,
     folderField.wrap,
+    debugCheck.wrap,
     save,
     close,
   );

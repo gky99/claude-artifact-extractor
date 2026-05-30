@@ -1,6 +1,7 @@
-import { getCaptured, clearCaptured, installFetchInterceptor } from './fetch-interceptor';
+import { getCaptured, installFetchInterceptor } from './fetch-interceptor';
 import { mountUI } from './ui';
 import { openConfigPanel } from './config';
+import { getSettings, subscribe } from './settings';
 import css from './ui.css?inline';
 
 // Install the interceptor IMMEDIATELY (run-at: document-start) so we catch the
@@ -18,7 +19,7 @@ if (document.body) {
 
 // --- Discovery helper (kept for debugging schema drift) --------------------
 
-GM_registerMenuCommand('Dump captured responses (console)', () => {
+function dumpCaptured(): void {
   const captured = getCaptured();
   console.info(`[artifact-exporter] ${captured.length} captured response(s):`);
   for (const c of captured) {
@@ -28,11 +29,22 @@ GM_registerMenuCommand('Dump captured responses (console)', () => {
   }
   (unsafeWindow as unknown as Record<string, unknown>).__claudeCaptured = captured;
   console.info('[artifact-exporter] Also available as window.__claudeCaptured');
-});
+}
 
-GM_registerMenuCommand('Clear captured responses', () => {
-  clearCaptured();
-  console.info('[artifact-exporter] Capture store cleared.');
-});
+// The dump command only exists while debug capture is on (there's nothing to
+// dump otherwise). Register/unregister it live as the Config toggle changes.
+let dumpMenuId: number | undefined;
+function syncDebugMenu(): void {
+  const debug = getSettings().debug;
+  if (debug && dumpMenuId === undefined) {
+    dumpMenuId = GM_registerMenuCommand('Dump captured responses (console)', dumpCaptured);
+  } else if (!debug && dumpMenuId !== undefined) {
+    GM_unregisterMenuCommand(dumpMenuId);
+    dumpMenuId = undefined;
+  }
+}
+
+syncDebugMenu();
+subscribe(syncDebugMenu);
 
 GM_registerMenuCommand('Config…', openConfigPanel);

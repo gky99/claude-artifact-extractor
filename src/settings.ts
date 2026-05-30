@@ -12,6 +12,9 @@ export interface Settings {
   obsidianVault: string;
   /** Vault-relative folder; '' means the vault root. */
   obsidianFolder: string;
+  /** Capture every /api/ response into the debug store + show the dump command.
+   *  Off by default to avoid the memory cost of broad capture. */
+  debug: boolean;
 }
 
 const DEFAULTS: Settings = {
@@ -20,6 +23,7 @@ const DEFAULTS: Settings = {
   showObsidian: false,
   obsidianVault: '',
   obsidianFolder: '',
+  debug: false,
 };
 
 /** Reads settings, merging any stored values over defaults. Tolerant of
@@ -39,10 +43,28 @@ export function getSettings(): Settings {
     showObsidian: typeof parsed.showObsidian === 'boolean' ? parsed.showObsidian : DEFAULTS.showObsidian,
     obsidianVault: typeof parsed.obsidianVault === 'string' ? parsed.obsidianVault : DEFAULTS.obsidianVault,
     obsidianFolder: typeof parsed.obsidianFolder === 'string' ? parsed.obsidianFolder : DEFAULTS.obsidianFolder,
+    debug: typeof parsed.debug === 'boolean' ? parsed.debug : DEFAULTS.debug,
   };
 }
 
-/** Persists the full settings object. */
+/** Listeners notified after settings are persisted, so modules can react to a
+ *  change live (no page reload). */
+const listeners: Array<() => void> = [];
+
+/** Registers a listener invoked after every saveSettings(). */
+export function subscribe(listener: () => void): void {
+  listeners.push(listener);
+}
+
+/** Persists the full settings object, then notifies subscribers (best-effort:
+ *  a throwing listener never blocks persistence or other listeners). */
 export function saveSettings(s: Settings): void {
   GM_setValue(STORE_KEY, JSON.stringify(s));
+  for (const listener of listeners) {
+    try {
+      listener();
+    } catch {
+      /* a subscriber must never break saving or sibling subscribers */
+    }
+  }
 }

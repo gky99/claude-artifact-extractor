@@ -1,4 +1,5 @@
 import type { CapturedResponse, RawConversation } from './types';
+import { getSettings } from './settings';
 
 /**
  * Monkey-patches the page's fetch to capture API responses non-destructively.
@@ -26,10 +27,6 @@ export function getCaptured(): readonly CapturedResponse[] {
   return store;
 }
 
-export function clearCaptured(): void {
-  store.length = 0;
-}
-
 /** The latest conversation we have parsed from captured traffic, if any. */
 export function getLatestConversation(): RawConversation | null {
   return latestConversation;
@@ -46,9 +43,14 @@ export function installFetchInterceptor(): void {
     const response = await original.apply(this, args);
     try {
       const url = urlOf(args[0]);
-      if (CAPTURE_RE.test(url)) {
+      // Debug off (default): only the conversation-load response export needs.
+      // Debug on: every /api/ response, kept in the store for the dump command.
+      // Read settings fresh per call so a toggle takes effect without reload.
+      const debug = getSettings().debug;
+      const relevant = debug ? CAPTURE_RE.test(url) : CONVERSATION_RE.test(url);
+      if (relevant) {
         // Clone so we never consume the body the app is about to read.
-        captureResponse(response.clone(), url, methodOf(args)).catch(() => {
+        captureResponse(response.clone(), url, methodOf(args), debug).catch(() => {
           /* swallow: capture must never break the page */
         });
       }
@@ -72,10 +74,16 @@ function methodOf(args: Parameters<typeof fetch>): string {
   return args[1]?.method ?? 'GET';
 }
 
+/**
+ * Reads the cloned response and records it. `keep` controls whether it goes
+ * into the debug `store` (only when debug capture is on); the conversation we
+ * need for export is always tracked in `latestConversation`, regardless.
+ */
 async function captureResponse(
   response: Response,
   url: string,
   method: string,
+  keep: boolean,
 ): Promise<void> {
   const text = await response.text();
   let json: unknown = null;
@@ -85,15 +93,17 @@ async function captureResponse(
     /* non-JSON (e.g. SSE) — keep raw text only */
   }
 
-  store.push({
-    id: nextId++,
-    url,
-    method,
-    status: response.status,
-    json,
-    text,
-    at: performance.now() - START,
-  });
+  if (keep) {
+    store.push({
+      id: nextId++,
+      url,
+      method,
+      status: response.status,
+      json,
+      text,
+      at: performance.now() - START,
+    });
+  }
 
   if (json && CONVERSATION_RE.test(url) && isConversation(json)) {
     latestConversation = json;

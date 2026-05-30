@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSettings, saveSettings } from '../src/settings';
+import { getSettings, saveSettings, subscribe } from '../src/settings';
 
 let store: Record<string, unknown>;
 
@@ -19,6 +19,7 @@ describe('settings', () => {
       showObsidian: false,
       obsidianVault: '',
       obsidianFolder: '',
+      debug: false,
     });
   });
 
@@ -29,6 +30,7 @@ describe('settings', () => {
       showObsidian: true,
       obsidianVault: 'My Vault',
       obsidianFolder: 'Clippings',
+      debug: true,
     });
     expect(getSettings()).toEqual({
       showCopy: false,
@@ -36,6 +38,7 @@ describe('settings', () => {
       showObsidian: true,
       obsidianVault: 'My Vault',
       obsidianFolder: 'Clippings',
+      debug: true,
     });
   });
 
@@ -51,5 +54,29 @@ describe('settings', () => {
     expect(s.showDownload).toBe(true);
     expect(s.showCopy).toBe(true); // default preserved
     expect(s.obsidianFolder).toBe('');
+  });
+
+  it('defaults debug to false and ignores a non-boolean stored value', () => {
+    expect(getSettings().debug).toBe(false);
+    store['cae-settings'] = JSON.stringify({ debug: 'yes' });
+    expect(getSettings().debug).toBe(false);
+  });
+
+  it('notifies subscribers on save', () => {
+    const calls: number[] = [];
+    subscribe(() => calls.push(1));
+    saveSettings(getSettings());
+    expect(calls).toEqual([1]);
+  });
+
+  it('a throwing subscriber neither blocks persistence nor other subscribers', () => {
+    const calls: string[] = [];
+    subscribe(() => {
+      throw new Error('boom');
+    });
+    subscribe(() => calls.push('ran'));
+    saveSettings({ ...getSettings(), debug: true });
+    expect(calls).toEqual(['ran']);
+    expect(getSettings().debug).toBe(true); // persisted despite the throw
   });
 });
