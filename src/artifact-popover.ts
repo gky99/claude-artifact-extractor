@@ -1,7 +1,7 @@
 import { getLatestConversation } from './fetch-interceptor';
 import { findArtifacts } from './conversation';
 import { renderArtifactMarkdown } from './markdown';
-import { getSettings, saveSettings, type Settings } from './settings';
+import { getSettings, saveSettings, type Settings, type ButtonPos, type Corner } from './settings';
 import { copyArtifact, downloadArtifact, saveToObsidian } from './exporters';
 import type { RawArtifactInput } from './types';
 import { clampToViewport, makeDraggable } from './draggable';
@@ -15,6 +15,10 @@ const GEAR_ID = 'cae-settings-button';
 /** Mounts the floating button stack once the DOM is ready. */
 export function mountUI(): void {
   renderButtonStack();
+  // Keep the stack on-screen when the viewport changes. Registered once (not in
+  // renderButtonStack, which rebuilds on every settings change); it looks the
+  // stack up by id so it survives rebuilds.
+  window.addEventListener('resize', clampStackToViewport);
 }
 
 /** (Re)builds the button stack from current settings. Removes any existing
@@ -52,34 +56,62 @@ export function renderButtonStack(): void {
   applyStoredPosition(stack);
 
   makeDraggable(stack, {
-    onDrop: (pos) => {
-      const rect = stack.getBoundingClientRect();
-      const clamped = clampToViewport(
-        pos,
-        { width: rect.width, height: rect.height },
-        { width: window.innerWidth, height: window.innerHeight },
-      );
-      stack.style.left = `${clamped.x}px`;
-      stack.style.top = `${clamped.y}px`;
-      saveSettings({ ...getSettings(), buttonPos: clamped });
+    onDrop: () => {
+      const pos = nearestCornerPos(stack.getBoundingClientRect());
+      placeStack(stack, pos);
+      saveSettings({ ...getSettings(), buttonPos: pos });
     },
   });
 }
 
-/** Applies the persisted position (clamped), or leaves the default corner. */
-function applyStoredPosition(stack: HTMLElement): void {
-  const pos = getSettings().buttonPos;
-  if (!pos) return;
+/** Picks the viewport corner the stack's center is nearest, and the inward
+ *  offset (px) from that corner's edges to the stack's near edges. */
+function nearestCornerPos(rect: DOMRect): ButtonPos {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const right = rect.left + rect.width / 2 > vw / 2;
+  const bottom = rect.top + rect.height / 2 > vh / 2;
+  const corner = `${bottom ? 'b' : 't'}${right ? 'r' : 'l'}` as Corner;
+  return {
+    corner,
+    dx: Math.max(0, right ? vw - rect.right : rect.left),
+    dy: Math.max(0, bottom ? vh - rect.bottom : rect.top),
+  };
+}
+
+/** Anchors the stack to its stored corner, clamping the offset so it stays
+ *  fully on-screen. Using corner anchors (right/bottom vs left/top) lets the
+ *  browser preserve the relative position across resizes for free. */
+function placeStack(stack: HTMLElement, pos: ButtonPos): void {
   const rect = stack.getBoundingClientRect();
-  const clamped = clampToViewport(
-    pos,
+  // dx/dy are inward distances, so clamping them to [0, viewport - size] is the
+  // same 1-D clamp clampToViewport already applies to a top-left point.
+  const { x: dx, y: dy } = clampToViewport(
+    { x: pos.dx, y: pos.dy },
     { width: rect.width, height: rect.height },
     { width: window.innerWidth, height: window.innerHeight },
   );
-  stack.style.left = `${clamped.x}px`;
-  stack.style.top = `${clamped.y}px`;
-  stack.style.right = 'auto';
-  stack.style.bottom = 'auto';
+  const right = pos.corner === 'tr' || pos.corner === 'br';
+  const bottom = pos.corner === 'bl' || pos.corner === 'br';
+  stack.style.left = right ? 'auto' : `${dx}px`;
+  stack.style.right = right ? `${dx}px` : 'auto';
+  stack.style.top = bottom ? 'auto' : `${dy}px`;
+  stack.style.bottom = bottom ? `${dy}px` : 'auto';
+}
+
+/** Applies the persisted corner position, or leaves the CSS default corner. */
+function applyStoredPosition(stack: HTMLElement): void {
+  const pos = getSettings().buttonPos;
+  if (pos) placeStack(stack, pos);
+}
+
+/** Re-clamps the stack into the current viewport on resize (display only — the
+ *  stored corner offset is the user's intent and is left untouched, so the
+ *  stack rubber-bands back out when the window grows again). */
+function clampStackToViewport(): void {
+  const stack = document.getElementById(STACK_ID);
+  const pos = getSettings().buttonPos;
+  if (stack && pos) placeStack(stack, pos);
 }
 
 function togglePopover(): void {

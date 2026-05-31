@@ -36,7 +36,7 @@ describe('settings', () => {
       debug: true,
       theme: 'dark',
       showSettingsButton: false,
-      buttonPos: { x: 100, y: 200 },
+      buttonPos: { corner: 'br', dx: 20, dy: 30 },
     });
     expect(getSettings()).toEqual({
       showCopy: false,
@@ -47,7 +47,7 @@ describe('settings', () => {
       debug: true,
       theme: 'dark',
       showSettingsButton: false,
-      buttonPos: { x: 100, y: 200 },
+      buttonPos: { corner: 'br', dx: 20, dy: 30 },
     });
   });
 
@@ -108,16 +108,30 @@ describe('settings', () => {
     expect(getSettings().showSettingsButton).toBe(true);
   });
 
-  it('defaults buttonPos to null and round-trips a valid point', () => {
+  it('defaults buttonPos to null and round-trips a valid corner offset', () => {
     expect(getSettings().buttonPos).toBeNull();
-    store['cae-settings'] = JSON.stringify({ buttonPos: { x: 12, y: 34 } });
-    expect(getSettings().buttonPos).toEqual({ x: 12, y: 34 });
+    store['cae-settings'] = JSON.stringify({ buttonPos: { corner: 'tl', dx: 12, dy: 34 } });
+    expect(getSettings().buttonPos).toEqual({ corner: 'tl', dx: 12, dy: 34 });
   });
 
-  it('rejects a malformed buttonPos (non-finite or wrong shape)', () => {
-    store['cae-settings'] = JSON.stringify({ buttonPos: { x: 'a', y: 1 } });
+  it('accepts each valid corner', () => {
+    for (const corner of ['tl', 'tr', 'bl', 'br'] as const) {
+      store['cae-settings'] = JSON.stringify({ buttonPos: { corner, dx: 5, dy: 5 } });
+      expect(getSettings().buttonPos).toEqual({ corner, dx: 5, dy: 5 });
+    }
+  });
+
+  it('rejects a malformed buttonPos (bad corner, non-finite, or wrong shape)', () => {
+    store['cae-settings'] = JSON.stringify({ buttonPos: { corner: 'middle', dx: 1, dy: 1 } });
+    expect(getSettings().buttonPos).toBeNull();
+    store['cae-settings'] = JSON.stringify({ buttonPos: { corner: 'br', dx: 'a', dy: 1 } });
+    expect(getSettings().buttonPos).toBeNull();
+    store['cae-settings'] = JSON.stringify({ buttonPos: { dx: 1, dy: 1 } });
     expect(getSettings().buttonPos).toBeNull();
     store['cae-settings'] = JSON.stringify({ buttonPos: 5 });
+    expect(getSettings().buttonPos).toBeNull();
+    // legacy absolute {x,y} shape no longer accepted -> resets to default
+    store['cae-settings'] = JSON.stringify({ buttonPos: { x: 12, y: 34 } });
     expect(getSettings().buttonPos).toBeNull();
   });
 });

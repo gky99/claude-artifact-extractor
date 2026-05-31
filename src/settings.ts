@@ -2,10 +2,19 @@ const STORE_KEY = 'cae-settings';
 
 export type Theme = 'auto' | 'light' | 'dark';
 
+/** The viewport corner the button stack is anchored to. */
+export type Corner = 'tl' | 'tr' | 'bl' | 'br';
+
+/** Persisted button-stack position, stored relative to its nearest corner so it
+ *  keeps the same relative spot when the viewport resizes. `dx`/`dy` are the
+ *  inward distances (px) from that corner's vertical/horizontal edges. */
 export interface ButtonPos {
-  x: number;
-  y: number;
+  corner: Corner;
+  dx: number;
+  dy: number;
 }
+
+const CORNERS: readonly Corner[] = ['tl', 'tr', 'bl', 'br'];
 
 /** Persisted user settings. One JSON blob under STORE_KEY. */
 export interface Settings {
@@ -26,7 +35,8 @@ export interface Settings {
   theme: Theme;
   /** Show the floating gear (settings) button. */
   showSettingsButton: boolean;
-  /** Persisted top-left of the draggable button stack; null = default corner. */
+  /** Persisted corner-relative position of the draggable button stack;
+   *  null = default corner. */
   buttonPos: ButtonPos | null;
 }
 
@@ -45,10 +55,12 @@ const DEFAULTS: Settings = {
 function parseButtonPos(value: unknown): ButtonPos | null {
   if (
     typeof value === 'object' && value !== null &&
-    Number.isFinite((value as ButtonPos).x) &&
-    Number.isFinite((value as ButtonPos).y)
+    CORNERS.includes((value as ButtonPos).corner) &&
+    Number.isFinite((value as ButtonPos).dx) &&
+    Number.isFinite((value as ButtonPos).dy)
   ) {
-    return { x: (value as ButtonPos).x, y: (value as ButtonPos).y };
+    const { corner, dx, dy } = value as ButtonPos;
+    return { corner, dx, dy };
   }
   return null;
 }

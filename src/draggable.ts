@@ -35,37 +35,50 @@ export function makeDraggable(el: HTMLElement, { threshold = 4, onDrop }: Dragga
   let startY = 0;
   let originLeft = 0;
   let originTop = 0;
+  let pointerId = -1;
   let dragging = false;
   let moved = false;
+  let captured = false;
 
   el.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     dragging = true;
     moved = false;
+    captured = false;
+    pointerId = e.pointerId;
     startX = e.clientX;
     startY = e.clientY;
     const rect = el.getBoundingClientRect();
     originLeft = rect.left;
     originTop = rect.top;
-    el.setPointerCapture(e.pointerId);
+    // NB: capture is acquired lazily (below) only once a real drag starts —
+    // capturing here would retarget the trailing `click` to this container and
+    // swallow clicks on the inner buttons.
   });
 
   el.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
-    if (!moved && Math.hypot(dx, dy) < threshold) return;
-    moved = true;
+    if (!moved) {
+      if (Math.hypot(dx, dy) < threshold) return;
+      moved = true;
+      el.setPointerCapture(pointerId); // keep receiving moves if the cursor leaves the element
+      captured = true;
+    }
     el.style.left = `${originLeft + dx}px`;
     el.style.top = `${originTop + dy}px`;
     el.style.right = 'auto';
     el.style.bottom = 'auto';
   });
 
-  el.addEventListener('pointerup', (e) => {
+  el.addEventListener('pointerup', () => {
     if (!dragging) return;
     dragging = false;
-    el.releasePointerCapture(e.pointerId);
+    if (captured) {
+      el.releasePointerCapture(pointerId);
+      captured = false;
+    }
     if (moved) {
       const rect = el.getBoundingClientRect();
       onDrop({ x: rect.left, y: rect.top });
