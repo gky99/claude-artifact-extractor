@@ -1,4 +1,4 @@
-# Claude Artifact Exporter
+# Claude Artifact Extractor
 
 A Tampermonkey userscript that exports Claude **research artifacts** to Markdown
 **with inline references preserved**.
@@ -32,13 +32,13 @@ This project uses [pnpm](https://pnpm.io/). Install it with `corepack enable pnp
 ```bash
 pnpm install
 pnpm dev         # vite dev server; serves a live .user.js for install
-pnpm build       # outputs dist/claude-artifact-exporter.user.js
+pnpm build       # outputs dist/claude-artifact-extractor.user.js
 pnpm lint        # eslint + tsc --noEmit
 ```
 
 With `pnpm dev`, open the URL Vite prints and install the served userscript in
 Tampermonkey once — it then hot-reloads as you edit. For a fixed install, run
-`pnpm build` and drag `dist/claude-artifact-exporter.user.js` into Tampermonkey.
+`pnpm build` and drag `dist/claude-artifact-extractor.user.js` into Tampermonkey.
 
 ## Discovery workflow (reverse-engineering the schema)
 

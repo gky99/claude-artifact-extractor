@@ -1,5 +1,5 @@
 {
-  "name": "claude-artifact-exporter",
+  "name": "claude-artifact-extractor",
   "version": "0.1.0",
   "description": "Tampermonkey userscript that extracts Claude research artifacts to Markdown, preserving inline references that the native export drops.",
   "type": "module",

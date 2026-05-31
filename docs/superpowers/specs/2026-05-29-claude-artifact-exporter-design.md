@@ -1,4 +1,4 @@
-# Claude Artifact Exporter — Design
+# Claude Artifact Extractor — Design
 
 **Date:** 2026-05-29
 **Status:** Approved (design); implementation pending plan
@@ -129,6 +129,7 @@ Data flow: `fetch` patch → capture store → artifact extractor → footnote r
 - **`src/conversation.ts`** — types for the captured response + a parser that
   walks `chat_messages`, finds `artifacts` tool_use blocks, and groups versions by
   `input.id` (keeping the final version per id). Produces:
+
   ```ts
   interface ArtifactDoc {
     id: string;
@@ -138,6 +139,7 @@ Data flow: `fetch` patch → capture store → artifact extractor → footnote r
     versionUuid: string;
   }
   ```
+
 - **`src/footnotes.ts`** — pure function: `(content, citations) => markdownBody`.
   Numbers citations in array order (no dedup); inserts `[^n]` markers at
   `end_index` using UTF-16 string indexing, in descending end_index order so

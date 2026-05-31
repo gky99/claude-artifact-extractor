@@ -1,4 +1,4 @@
-/* All Artifact Exporter UI styles. Injected once via GM_addStyle.
+/* All Artifact Extractor UI styles. Injected once via GM_addStyle.
    Every class is cae-prefixed to avoid colliding with Claude's own CSS. */
 
 .cae-button {
@@ -40,7 +40,7 @@
   padding: 8px 0;
 }
 
-.cae-row + .cae-row {
+.cae-row+.cae-row {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 

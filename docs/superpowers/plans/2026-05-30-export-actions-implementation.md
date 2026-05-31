@@ -32,6 +32,7 @@ No change to `vite.config.ts` (no new grants), `fetch-interceptor.ts`, `conversa
 ## Task 1: Drop the title heading from rendered Markdown
 
 **Files:**
+
 - Modify: `test/markdown.test.ts`
 - Modify: `src/markdown.ts:18-28`
 
@@ -110,6 +111,7 @@ git commit -m "feat: drop title heading from rendered markdown (title becomes fi
 ## Task 2: Settings store (`settings.ts`)
 
 **Files:**
+
 - Create: `src/settings.ts`
 - Test: `test/settings.test.ts`
 
@@ -252,6 +254,7 @@ git commit -m "feat: add persisted settings store"
 ## Task 3: Pure exporter helpers (`toFileName`, `buildObsidianUri`)
 
 **Files:**
+
 - Create: `src/exporters.ts` (helpers only in this task)
 - Test: `test/exporters.test.ts`
 
@@ -362,6 +365,7 @@ git commit -m "feat: add toFileName + buildObsidianUri pure helpers"
 ## Task 4: Exporter actions (copy / download / save-to-obsidian)
 
 **Files:**
+
 - Modify: `src/exporters.ts` (append actions + the picker typing + the iframe helper)
 
 These wrap browser/GM APIs and are verified by typecheck + manual testing (no unit test).
@@ -465,6 +469,7 @@ git commit -m "feat: add copy/download/save-to-obsidian actions"
 ## Task 5: Rewrite the config panel (`config.ts`)
 
 **Files:**
+
 - Rewrite: `src/config.ts`
 
 - [ ] **Step 1: Replace `config.ts` with the real settings panel**
@@ -493,7 +498,7 @@ export function openConfigPanel(): void {
 
   const heading = document.createElement('h2');
   heading.className = 'cae-config-heading';
-  heading.textContent = 'Artifact Exporter — Config';
+  heading.textContent = 'Artifact Extractor — Config';
 
   const copyCheck = makeCheckbox('Show “Copy” button', settings.showCopy);
   const downloadCheck = makeCheckbox('Show “Download” button', settings.showDownload);
@@ -585,6 +590,7 @@ git commit -m "feat: real config panel for button toggles + obsidian vault/folde
 ## Task 6: Render enabled buttons in the popover (`ui.ts`)
 
 **Files:**
+
 - Rewrite: `src/ui.ts`
 
 - [ ] **Step 1: Replace `ui.ts`**
@@ -730,6 +736,7 @@ git commit -m "feat: render copy/download/obsidian buttons per settings"
 ## Task 7: Styles for the new buttons + config controls (`ui.css`)
 
 **Files:**
+
 - Modify: `src/ui.css`
 
 - [ ] **Step 1: Extend the shared button rule**
@@ -784,7 +791,7 @@ Add to the end of `src/ui.css`:
 - [ ] **Step 3: Build to confirm the bundle compiles**
 
 Run: `pnpm build`
-Expected: PASS — `dist/claude-artifact-exporter.user.js` written, no errors.
+Expected: PASS — `dist/claude-artifact-extractor.user.js` written, no errors.
 
 - [ ] **Step 4: Commit**
 
@@ -798,16 +805,18 @@ git commit -m "style: layout for new action buttons and config controls"
 ## Task 8: Docs + full verification
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Update the architecture notes in `CLAUDE.md`**
 
 In the "Architecture" module list, make these edits:
+
 - Update the `src/markdown.ts` line to: `RawArtifactInput → Markdown (body + footnote list). The title is **not** rendered as a heading; it is used only as the export filename.`
 - Update the `src/config.ts` line to: `Config… menu command opening a settings panel: checkboxes that toggle each row action (Copy / Download / Save to Obsidian) and the Obsidian vault + folder path, persisted via settings.ts.`
 - Add two new bullets after the `src/config.ts` line:
-  - `src/settings.ts — typed, persisted settings (GM_getValue/GM_setValue): which action buttons show + the Obsidian vault/folder.`
-  - `src/exporters.ts — the three row actions (copy, download via showSaveFilePicker with anchor fallback, save-to-Obsidian via obsidian://new + clipboard) plus pure toFileName/buildObsidianUri helpers.`
+    - `src/settings.ts — typed, persisted settings (GM_getValue/GM_setValue): which action buttons show + the Obsidian vault/folder.`
+    - `src/exporters.ts — the three row actions (copy, download via showSaveFilePicker with anchor fallback, save-to-Obsidian via obsidian://new + clipboard) plus pure toFileName/buildObsidianUri helpers.`
 
 In the "Commands" section, update the unit-test line to include the new modules: `covering the pure modules (citations.ts, footnotes.ts, conversation.ts, markdown.ts, settings.ts, exporters.ts)`.
 
@@ -818,7 +827,8 @@ Expected: all three PASS — eslint clean, `tsc --noEmit` clean, all tests green
 
 - [ ] **Step 3: Manual smoke test (record results)**
 
-Build, install `dist/claude-artifact-exporter.user.js` in Tampermonkey, open a Claude research conversation with an artifact, then verify:
+Build, install `dist/claude-artifact-extractor.user.js` in Tampermonkey, open a Claude research conversation with an artifact, then verify:
+
 1. Open **Config…** → toggle each checkbox, set vault (e.g. your vault name) + folder (e.g. `Clippings`), **Save**, reload, reopen Config → values persisted.
 2. Open the **⬇ Artifacts** popover → only the enabled buttons show on each row.
 3. **Copy** → paste into an editor → Markdown has **no** `# title` heading; footnotes intact.
@@ -838,6 +848,7 @@ git commit -m "docs: document settings + exporters modules and title-as-filename
 ## Self-Review (done while writing)
 
 **Spec coverage:**
+
 - Copy/Download/Save-to-Obsidian actions → Tasks 4 + 6. ✅
 - Config checkboxes gate each button → Tasks 5 + 6. ✅
 - Obsidian vault/folder settings, always visible → Task 5. ✅

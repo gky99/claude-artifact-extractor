@@ -31,8 +31,8 @@ Single job. Steps in order:
    cleanly without releasing. Consequence: ordinary pushes to `main` are no-ops;
    only a version bump produces a release.
 5. **Gate:** `pnpm lint`, then `pnpm test`. Any failure aborts before publishing.
-6. **Build:** `pnpm build` → `dist/claude-artifact-exporter.user.js`.
-7. **Publish:** `gh release create v$VERSION dist/claude-artifact-exporter.user.js
+6. **Build:** `pnpm build` → `dist/claude-artifact-extractor.user.js`.
+7. **Publish:** `gh release create v$VERSION dist/claude-artifact-extractor.user.js
    --title "v$VERSION" --generate-notes`. `gh` creates the tag at the current
    commit and uploads the asset.
 
@@ -50,13 +50,13 @@ The userscript metadata block is generated from `vite.config.ts` (never
 hand-written). Changes:
 
 - Add `updateURL` and `downloadURL`, both set to:
-  `https://github.com/gky99/claude-artifact-exporter/releases/latest/download/claude-artifact-exporter.user.js`
+  `https://github.com/gky99/claude-artifact-extractor/releases/latest/download/claude-artifact-extractor.user.js`
   The `releases/latest/download/<asset>` path always redirects to the newest
   release's asset, and the built asset filename is stable.
 - `@version` is left to vite-plugin-monkey's default, which reads `package.json`'s
   `version` — so it stays in sync with the source of truth automatically.
 - Replace the placeholders: `namespace` →
-  `https://github.com/gky99/claude-artifact-exporter`, `author` → `gky99`.
+  `https://github.com/gky99/claude-artifact-extractor`, `author` → `gky99`.
 
 ## Testing & verification
 
@@ -77,6 +77,6 @@ readable shell step. Verification:
 ## Preconditions / notes
 
 - The repo currently has **no git remote**. The workflow file is created now but
-  stays dormant until a GitHub remote (`gky99/claude-artifact-exporter`) is added
+  stays dormant until a GitHub remote (`gky99/claude-artifact-extractor`) is added
   and `main` is pushed.
 - First run will release the current `package.json` version (`0.1.0`) as `v0.1.0`.

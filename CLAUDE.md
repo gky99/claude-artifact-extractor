@@ -15,7 +15,7 @@ This project uses **pnpm** (pinned via the `packageManager` field in `package.js
 ```bash
 pnpm install       # install dependencies (uses pnpm-lock.yaml)
 pnpm dev           # Vite dev server; serves a hot-reloading .user.js to install once in Tampermonkey
-pnpm build         # Bundle to dist/claude-artifact-exporter.user.js (the installable artifact)
+pnpm build         # Bundle to dist/claude-artifact-extractor.user.js (the installable artifact)
 pnpm lint          # eslint + tsc --noEmit
 pnpm typecheck     # tsc --noEmit only
 ```
@@ -88,10 +88,12 @@ no second asset is shipped and nothing is fetched at runtime.
 
 - Author CSS in `src/ui.css`. Import it as a **string** with Vite's `?inline`
   query, then inject once via `GM_addStyle`:
+
   ```ts
   import css from './ui.css?inline';   // compiled to a string literal in the bundle
   GM_addStyle(css);                     // inject once, before mounting UI
   ```
+
 - `GM_addStyle` must be listed in the `grant` array in `vite.config.ts` (grants
   are generated from there, never hand-written).
 - **Prefix every class with `cae-`.** `GM_addStyle` injects *global* rules into

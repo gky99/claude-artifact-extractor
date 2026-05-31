@@ -21,14 +21,14 @@ if (document.body) {
 
 function dumpCaptured(): void {
   const captured = getCaptured();
-  console.info(`[artifact-exporter] ${captured.length} captured response(s):`);
+  console.info(`[artifact-extractor] ${captured.length} captured response(s):`);
   for (const c of captured) {
     console.groupCollapsed(`#${c.id} ${c.method} ${c.status} ${c.url}`);
     console.log(c.json ?? c.text);
     console.groupEnd();
   }
   (unsafeWindow as unknown as Record<string, unknown>).__claudeCaptured = captured;
-  console.info('[artifact-exporter] Also available as window.__claudeCaptured');
+  console.info('[artifact-extractor] Also available as window.__claudeCaptured');
 }
 
 // The dump command only exists while debug capture is on (there's nothing to

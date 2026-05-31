@@ -34,6 +34,7 @@ Note on commit greenness: TypeScript's `noUnusedLocals` does not flag unused **e
 ### Task 1: `citations.ts` — identity, dedup, and naming
 
 **Files:**
+
 - Modify: `src/types.ts`
 - Create: `src/citations.ts`
 - Test: `test/citations.test.ts`
@@ -248,6 +249,7 @@ git commit -m "feat: resolveReferences — identity, dedup, named footnotes"
 ### Task 2: `conversation.ts` — `findArtifacts` (raw selection)
 
 **Files:**
+
 - Modify: `src/conversation.ts`
 - Test: `test/conversation.test.ts`
 
@@ -367,6 +369,7 @@ git commit -m "feat: findArtifacts — select raw artifact inputs without normal
 ### Task 3: Rewrite `footnotes.ts`, update `markdown.ts`, rewire `ui.ts`
 
 **Files:**
+
 - Rewrite: `src/footnotes.ts`
 - Modify: `src/markdown.ts`
 - Modify: `src/ui.ts`
@@ -707,7 +710,7 @@ Expected: no errors. (`ArtifactDoc`/`Citation`/`extractArtifacts` are now unused
 - [ ] **Step 10: Build to confirm the bundle still compiles**
 
 Run: `pnpm build`
-Expected: builds `dist/claude-artifact-exporter.user.js` with no errors.
+Expected: builds `dist/claude-artifact-extractor.user.js` with no errors.
 
 - [ ] **Step 11: Commit**
 
@@ -721,6 +724,7 @@ git commit -m "feat: named, deduped, end-of-line footnotes over raw artifact inp
 ### Task 4: Remove dead normalization code
 
 **Files:**
+
 - Modify: `src/types.ts`
 - Modify: `src/conversation.ts`
 
@@ -764,6 +768,7 @@ git commit -m "refactor: drop ArtifactDoc/Citation normalization, keep raw shape
 ### Task 5: Add GM grants, ambient types, and eslint globals
 
 **Files:**
+
 - Modify: `src/gm.d.ts`
 - Modify: `eslint.config.js`
 - Modify: `vite.config.ts`
@@ -823,6 +828,7 @@ git commit -m "chore: grant + type GM_addStyle/GM_getValue/GM_setValue"
 ### Task 6: Extract UI styles into `src/ui.css`
 
 **Files:**
+
 - Create: `src/ui.css`
 - Modify: `src/ui.ts`
 - Modify: `src/main.ts`
@@ -830,7 +836,7 @@ git commit -m "chore: grant + type GM_addStyle/GM_getValue/GM_setValue"
 - [ ] **Step 1: Create `src/ui.css`**
 
 ```css
-/* All Artifact Exporter UI styles. Injected once via GM_addStyle.
+/* All Artifact Extractor UI styles. Injected once via GM_addStyle.
    Every class is cae-prefixed to avoid colliding with Claude's own CSS. */
 
 .cae-button {
@@ -1063,6 +1069,7 @@ git commit -m "refactor: move UI styles into src/ui.css injected via GM_addStyle
 ### Task 7: Config page with a persisted dummy setting
 
 **Files:**
+
 - Create: `src/config.ts`
 - Modify: `src/main.ts`
 
@@ -1092,7 +1099,7 @@ export function openConfigPanel(): void {
 
   const heading = document.createElement('h2');
   heading.className = 'cae-config-heading';
-  heading.textContent = 'Artifact Exporter — Config';
+  heading.textContent = 'Artifact Extractor — Config';
 
   const note = document.createElement('p');
   note.className = 'cae-config-note';
@@ -1160,7 +1167,7 @@ Expected: builds cleanly.
 
 - [ ] **Step 4: Manual verification (record the result)**
 
-Install `dist/claude-artifact-exporter.user.js` in Tampermonkey, open `https://claude.ai/`, and use the Tampermonkey menu → **Config…**. Type a value, click **Save** (status shows "Persisted value: …"), reload the page, reopen **Config…**, and confirm the input and status still show the saved value.
+Install `dist/claude-artifact-extractor.user.js` in Tampermonkey, open `https://claude.ai/`, and use the Tampermonkey menu → **Config…**. Type a value, click **Save** (status shows "Persisted value: …"), reload the page, reopen **Config…**, and confirm the input and status still show the saved value.
 
 - [ ] **Step 5: Commit**
 
@@ -1174,6 +1181,7 @@ git commit -m "feat: config page with a GM-persisted dummy setting"
 ### Task 8: Update CLAUDE.md and final verification
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Update the test-runner note in `CLAUDE.md`**
@@ -1215,7 +1223,7 @@ Expected: no errors.
 Run: `pnpm test`
 Expected: PASS (all tests in `test/`).
 Run: `pnpm build`
-Expected: builds `dist/claude-artifact-exporter.user.js` cleanly.
+Expected: builds `dist/claude-artifact-extractor.user.js` cleanly.
 
 - [ ] **Step 4: Commit**
 

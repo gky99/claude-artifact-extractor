@@ -1,4 +1,4 @@
-# Claude Artifact Exporter Implementation Plan
+# Claude Artifact Extractor Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -41,15 +41,18 @@
 ## Task 1: Add Vitest test tooling
 
 **Files:**
+
 - Modify: `package.json`
 - Create: `vitest.config.ts`
 
 - [ ] **Step 1: Install Vitest**
 
 Run:
+
 ```bash
 npm install -D vitest@^3.0.0
 ```
+
 Expected: adds `vitest` to devDependencies, exits 0.
 
 - [ ] **Step 2: Add the `test` script**
@@ -110,6 +113,7 @@ git commit -m "test: add vitest runner and test script"
 ## Task 2: Define types
 
 **Files:**
+
 - Modify: `src/types.ts`
 
 - [ ] **Step 1: Replace `src/types.ts` with the full type set**
@@ -227,6 +231,7 @@ git commit -m "feat: define conversation and artifact types"
 ## Task 3: Extract artifacts from a conversation
 
 **Files:**
+
 - Create: `src/conversation.ts`
 - Test: `test/conversation.test.ts`
 
@@ -369,6 +374,7 @@ git commit -m "feat: extract normalized artifacts from conversation data"
 ## Task 4: Render footnotes
 
 **Files:**
+
 - Create: `src/footnotes.ts`
 - Test: `test/footnotes.test.ts`
 
@@ -514,6 +520,7 @@ git commit -m "feat: render inline footnote markers and reference list"
 ## Task 5: Assemble the final markdown document
 
 **Files:**
+
 - Modify: `src/markdown.ts`
 - Test: `test/markdown.test.ts`
 
@@ -621,6 +628,7 @@ git commit -m "feat: assemble full artifact markdown document"
 ## Task 6: Capture the conversation endpoint
 
 **Files:**
+
 - Modify: `src/fetch-interceptor.ts`
 
 The current interceptor captures any `/api/` URL into a flat store. Narrow the
@@ -759,6 +767,7 @@ git commit -m "feat: capture conversation-load endpoint and expose latest conver
 ## Task 7: Floating button + artifact popover
 
 **Files:**
+
 - Create: `src/ui.ts`
 
 This module is DOM/side-effecty and is verified manually (per CLAUDE.md), not unit
@@ -912,6 +921,7 @@ git commit -m "feat: floating button and artifact popover with copy action"
 ## Task 8: Wire up entry point
 
 **Files:**
+
 - Modify: `src/main.ts`
 - Delete: `src/extractor.ts`
 - Modify: `vite.config.ts` (drop `GM_download` grant)
@@ -993,16 +1003,17 @@ git commit -m "feat: wire interceptor and UI in entry point; drop extractor stub
 ## Task 9: Build the installable userscript
 
 **Files:**
-- (none new; produces `dist/claude-artifact-exporter.user.js`)
+
+- (none new; produces `dist/claude-artifact-extractor.user.js`)
 
 - [ ] **Step 1: Build**
 
 Run: `npm run build`
-Expected: PASS — writes `dist/claude-artifact-exporter.user.js`.
+Expected: PASS — writes `dist/claude-artifact-extractor.user.js`.
 
 - [ ] **Step 2: Verify the userscript header**
 
-Run: `node -e "const s=require('fs').readFileSync('dist/claude-artifact-exporter.user.js','utf8'); const h=s.slice(0, s.indexOf('==/UserScript==')); console.log(h)"`
+Run: `node -e "const s=require('fs').readFileSync('dist/claude-artifact-extractor.user.js','utf8'); const h=s.slice(0, s.indexOf('==/UserScript==')); console.log(h)"`
 Expected: header contains `@match https://claude.ai/*`, `@run-at document-start`,
 `@grant GM_registerMenuCommand`, `@grant GM_setClipboard`, and does NOT contain
 `@grant GM_download`.
@@ -1010,7 +1021,8 @@ Expected: header contains `@match https://claude.ai/*`, `@run-at document-start`
 - [ ] **Step 3: Manual verification checklist (per CLAUDE.md — no automated browser test)**
 
 Document the result in the commit message. Steps:
-1. Install `dist/claude-artifact-exporter.user.js` in Tampermonkey.
+
+1. Install `dist/claude-artifact-extractor.user.js` in Tampermonkey.
 2. Open a Claude research conversation that contains a report artifact.
 3. Confirm the `⬇ Artifacts` button appears bottom-right.
 4. Click it → popover lists the artifact with its reference count.
@@ -1029,6 +1041,7 @@ if the user wants a record. Otherwise the feature is complete.
 ## Self-Review
 
 **Spec coverage:**
+
 - Capture conversation endpoint → Task 6. ✓
 - Artifact extraction (tool_use "artifacts", final version per id) → Task 3. ✓
 - Footnotes, no dedup, UTF-16 offsets, descending insertion, fallback → Task 4. ✓
