@@ -1,5 +1,12 @@
 const STORE_KEY = 'cae-settings';
 
+export type Theme = 'auto' | 'light' | 'dark';
+
+export interface ButtonPos {
+  x: number;
+  y: number;
+}
+
 /** Persisted user settings. One JSON blob under STORE_KEY. */
 export interface Settings {
   /** Show the "Copy" button on each artifact row. */
@@ -15,6 +22,12 @@ export interface Settings {
   /** Capture every /api/ response into the debug store + show the dump command.
    *  Off by default to avoid the memory cost of broad capture. */
   debug: boolean;
+  /** UI color theme. 'auto' follows the OS via prefers-color-scheme. */
+  theme: Theme;
+  /** Show the floating gear (settings) button. */
+  showSettingsButton: boolean;
+  /** Persisted top-left of the draggable button stack; null = default corner. */
+  buttonPos: ButtonPos | null;
 }
 
 const DEFAULTS: Settings = {
@@ -24,7 +37,21 @@ const DEFAULTS: Settings = {
   obsidianVault: '',
   obsidianFolder: '',
   debug: false,
+  theme: 'auto',
+  showSettingsButton: true,
+  buttonPos: null,
 };
+
+function parseButtonPos(value: unknown): ButtonPos | null {
+  if (
+    typeof value === 'object' && value !== null &&
+    Number.isFinite((value as ButtonPos).x) &&
+    Number.isFinite((value as ButtonPos).y)
+  ) {
+    return { x: (value as ButtonPos).x, y: (value as ButtonPos).y };
+  }
+  return null;
+}
 
 /** Reads settings, merging any stored values over defaults. Tolerant of
  *  missing/corrupt/partial stored data — always returns a complete Settings. */
@@ -44,6 +71,15 @@ export function getSettings(): Settings {
     obsidianVault: typeof parsed.obsidianVault === 'string' ? parsed.obsidianVault : DEFAULTS.obsidianVault,
     obsidianFolder: typeof parsed.obsidianFolder === 'string' ? parsed.obsidianFolder : DEFAULTS.obsidianFolder,
     debug: typeof parsed.debug === 'boolean' ? parsed.debug : DEFAULTS.debug,
+    theme:
+      parsed.theme === 'light' || parsed.theme === 'dark' || parsed.theme === 'auto'
+        ? parsed.theme
+        : DEFAULTS.theme,
+    showSettingsButton:
+      typeof parsed.showSettingsButton === 'boolean'
+        ? parsed.showSettingsButton
+        : DEFAULTS.showSettingsButton,
+    buttonPos: 'buttonPos' in parsed ? parseButtonPos(parsed.buttonPos) : DEFAULTS.buttonPos,
   };
 }
 

@@ -1,16 +1,33 @@
 import { getLatestConversation } from './fetch-interceptor';
 import { findArtifacts } from './conversation';
 import { renderArtifactMarkdown } from './markdown';
-import { getSettings, type Settings } from './settings';
+import { getSettings, saveSettings, type Settings } from './settings';
 import { copyArtifact, downloadArtifact, saveToObsidian } from './exporters';
 import type { RawArtifactInput } from './types';
+import { clampToViewport, makeDraggable } from './draggable';
+import { openSettingsPanel } from './settings-panel';
 
 const BTN_ID = 'cae-export-button';
 const POPOVER_ID = 'cae-export-popover';
+const STACK_ID = 'cae-button-stack';
+const GEAR_ID = 'cae-settings-button';
 
-/** Mounts the floating export button once the DOM is ready. */
+/** Mounts the floating button stack once the DOM is ready. */
 export function mountUI(): void {
-  if (document.getElementById(BTN_ID)) return;
+  renderButtonStack();
+}
+
+/** (Re)builds the button stack from current settings. Removes any existing
+ *  stack and open popover first, so it is safe to call on every settings change. */
+export function renderButtonStack(): void {
+  document.getElementById(STACK_ID)?.remove();
+  document.getElementById(POPOVER_ID)?.remove();
+
+  const settings = getSettings();
+
+  const stack = document.createElement('div');
+  stack.id = STACK_ID;
+  stack.className = 'cae-button-stack';
 
   const button = document.createElement('button');
   button.id = BTN_ID;
@@ -18,7 +35,51 @@ export function mountUI(): void {
   button.className = 'cae-button';
   button.textContent = '⬇ Artifacts';
   button.addEventListener('click', togglePopover);
-  document.body.appendChild(button);
+  stack.appendChild(button);
+
+  if (settings.showSettingsButton) {
+    const gear = document.createElement('button');
+    gear.id = GEAR_ID;
+    gear.type = 'button';
+    gear.className = 'cae-gear';
+    gear.textContent = '⚙';
+    gear.title = 'Settings';
+    gear.addEventListener('click', openSettingsPanel);
+    stack.appendChild(gear);
+  }
+
+  document.body.appendChild(stack);
+  applyStoredPosition(stack);
+
+  makeDraggable(stack, {
+    onDrop: (pos) => {
+      const rect = stack.getBoundingClientRect();
+      const clamped = clampToViewport(
+        pos,
+        { width: rect.width, height: rect.height },
+        { width: window.innerWidth, height: window.innerHeight },
+      );
+      stack.style.left = `${clamped.x}px`;
+      stack.style.top = `${clamped.y}px`;
+      saveSettings({ ...getSettings(), buttonPos: clamped });
+    },
+  });
+}
+
+/** Applies the persisted position (clamped), or leaves the default corner. */
+function applyStoredPosition(stack: HTMLElement): void {
+  const pos = getSettings().buttonPos;
+  if (!pos) return;
+  const rect = stack.getBoundingClientRect();
+  const clamped = clampToViewport(
+    pos,
+    { width: rect.width, height: rect.height },
+    { width: window.innerWidth, height: window.innerHeight },
+  );
+  stack.style.left = `${clamped.x}px`;
+  stack.style.top = `${clamped.y}px`;
+  stack.style.right = 'auto';
+  stack.style.bottom = 'auto';
 }
 
 function togglePopover(): void {
@@ -52,6 +113,16 @@ function renderPopover(): void {
   }
 
   document.body.appendChild(popover);
+
+  const stack = document.getElementById(STACK_ID);
+  if (stack) {
+    const rect = stack.getBoundingClientRect();
+    popover.style.right = `${Math.max(0, window.innerWidth - rect.right)}px`;
+    popover.style.bottom = `${Math.max(0, window.innerHeight - rect.top + 8)}px`;
+  } else {
+    popover.style.right = '20px';
+    popover.style.bottom = '60px';
+  }
 }
 
 /** Briefly swaps a button's label, then restores it. */

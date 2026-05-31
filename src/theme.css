@@ -1,0 +1,48 @@
+/* Design tokens for the Artifact Extractor UI. All cae-prefixed so defining
+   them on :root cannot collide with Claude's own custom properties.
+   Light is the default; dark applies via prefers-color-scheme or an explicit
+   data-cae-theme override on <html>. */
+
+:root {
+  --cae-surface: #ffffff;
+  --cae-surface-button: #f4f4f5;
+  --cae-text: #1a1a1a;
+  --cae-border: rgba(0, 0, 0, 0.15);
+  --cae-divider: rgba(0, 0, 0, 0.1);
+  --cae-action-bg: #ececef;
+  --cae-action-text: #1a1a1a;
+  --cae-action-border: rgba(0, 0, 0, 0.2);
+  --cae-input-bg: #ffffff;
+  --cae-shadow: rgba(0, 0, 0, 0.18);
+  --cae-backdrop: rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-cae-theme='light']) {
+    --cae-surface: #1e1e1e;
+    --cae-surface-button: #2d2d2d;
+    --cae-text: #eeeeee;
+    --cae-border: rgba(255, 255, 255, 0.2);
+    --cae-divider: rgba(255, 255, 255, 0.1);
+    --cae-action-bg: #3a3a3a;
+    --cae-action-text: #ffffff;
+    --cae-action-border: rgba(255, 255, 255, 0.25);
+    --cae-input-bg: #2a2a2a;
+    --cae-shadow: rgba(0, 0, 0, 0.35);
+    --cae-backdrop: rgba(0, 0, 0, 0.55);
+  }
+}
+
+:root[data-cae-theme='dark'] {
+  --cae-surface: #1e1e1e;
+  --cae-surface-button: #2d2d2d;
+  --cae-text: #eeeeee;
+  --cae-border: rgba(255, 255, 255, 0.2);
+  --cae-divider: rgba(255, 255, 255, 0.1);
+  --cae-action-bg: #3a3a3a;
+  --cae-action-text: #ffffff;
+  --cae-action-border: rgba(255, 255, 255, 0.25);
+  --cae-input-bg: #2a2a2a;
+  --cae-shadow: rgba(0, 0, 0, 0.35);
+  --cae-backdrop: rgba(0, 0, 0, 0.55);
+}

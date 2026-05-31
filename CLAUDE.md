@@ -69,11 +69,19 @@ Data flow: `fetch` patch → capture store → `findArtifacts` (raw selection) �
 - `src/markdown.ts` — `RawArtifactInput` → Markdown (body + footnote list). The title is **not** rendered as a heading; it is used only as the export filename.
 - `src/types.ts` — captured-response and raw artifact shapes plus the computed
   `Reference` type.
-- `src/ui.ts` / `src/ui.css` — floating popover listing artifacts with a Copy
-  action; all styles live in `ui.css`, inlined at build via `?inline` + `GM_addStyle`.
-- `src/config.ts` — `Config…` menu command opening a settings panel: checkboxes
-  that toggle each row action (Copy / Download / Save to Obsidian) and the Obsidian
+- `src/artifact-popover.ts` / `src/artifact-popover.css` — floating popover listing
+  artifacts with per-row action buttons (Copy / Download / Save to Obsidian) and a
+  draggable button stack with a gear button to open settings; styles inlined via
+  `?inline` + `GM_addStyle`.
+- `src/settings-panel.ts` — `Config…` menu command opening a focus-modal settings
+  panel with themed sections: checkboxes that toggle each row action and the Obsidian
   vault + folder path, persisted via settings.ts.
+- `src/theme.ts` / `src/theme.css` — `applyTheme` reflects the chosen theme onto
+  `<html>` via a `data-cae-theme` attribute; `theme.css` defines the cae-prefixed
+  design tokens (light default, dark via `prefers-color-scheme`, forced overrides).
+- `src/draggable.ts` — `makeDraggable` (Pointer Events, click/drag threshold) and the
+  pure `clampToViewport` helper that keeps the button stack on-screen.
+- `src/settings-panel.css` — backdrop + config-panel + section styles.
 - `src/settings.ts` — typed, persisted settings (GM_getValue/GM_setValue): which
   action buttons show + the Obsidian vault/folder.
 - `src/exporters.ts` — the three row actions (copy; download via showSaveFilePicker
@@ -82,16 +90,21 @@ Data flow: `fetch` patch → capture store → `findArtifacts` (raw selection) �
 
 ## Styling
 
-UI styles live in a **separate `.css` source file**, not in inline `el.style`
-assignments. They are inlined into the single bundled userscript at build time —
+UI styles live in **separate `.css` source files** (e.g. `theme.css`,
+`artifact-popover.css`, `settings-panel.css`), not in inline `el.style`
+assignments. Each is imported with `?inline` and injected once via `GM_addStyle`
+(inject `theme.css` first so component styles can reference its variables).
+Dynamic geometry (a dragged position, a computed popover anchor) may be set inline
+via `el.style.left/top/right/bottom`; only colors, borders, and other presentation
+stay in CSS. All CSS is inlined into the single bundled userscript at build time —
 no second asset is shipped and nothing is fetched at runtime.
 
-- Author CSS in `src/ui.css`. Import it as a **string** with Vite's `?inline`
-  query, then inject once via `GM_addStyle`:
+- Author CSS in a `src/*.css` file (e.g. `src/artifact-popover.css`). Import it as a
+  **string** with Vite's `?inline` query, then inject once via `GM_addStyle`:
 
   ```ts
-  import css from './ui.css?inline';   // compiled to a string literal in the bundle
-  GM_addStyle(css);                     // inject once, before mounting UI
+  import css from './artifact-popover.css?inline'; // compiled to a string literal in the bundle
+  GM_addStyle(css);                                // inject once, before mounting UI
   ```
 
 - `GM_addStyle` must be listed in the `grant` array in `vite.config.ts` (grants

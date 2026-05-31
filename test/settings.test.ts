@@ -20,6 +20,9 @@ describe('settings', () => {
       obsidianVault: '',
       obsidianFolder: '',
       debug: false,
+      theme: 'auto',
+      showSettingsButton: true,
+      buttonPos: null,
     });
   });
 
@@ -31,6 +34,9 @@ describe('settings', () => {
       obsidianVault: 'My Vault',
       obsidianFolder: 'Clippings',
       debug: true,
+      theme: 'dark',
+      showSettingsButton: false,
+      buttonPos: { x: 100, y: 200 },
     });
     expect(getSettings()).toEqual({
       showCopy: false,
@@ -39,6 +45,9 @@ describe('settings', () => {
       obsidianVault: 'My Vault',
       obsidianFolder: 'Clippings',
       debug: true,
+      theme: 'dark',
+      showSettingsButton: false,
+      buttonPos: { x: 100, y: 200 },
     });
   });
 
@@ -78,5 +87,37 @@ describe('settings', () => {
     saveSettings({ ...getSettings(), debug: true });
     expect(calls).toEqual(['ran']);
     expect(getSettings().debug).toBe(true); // persisted despite the throw
+  });
+
+  it('defaults theme to auto and ignores an invalid stored value', () => {
+    expect(getSettings().theme).toBe('auto');
+    store['cae-settings'] = JSON.stringify({ theme: 'rainbow' });
+    expect(getSettings().theme).toBe('auto');
+  });
+
+  it('accepts each valid theme value', () => {
+    for (const t of ['auto', 'light', 'dark'] as const) {
+      store['cae-settings'] = JSON.stringify({ theme: t });
+      expect(getSettings().theme).toBe(t);
+    }
+  });
+
+  it('defaults showSettingsButton to true and ignores non-boolean', () => {
+    expect(getSettings().showSettingsButton).toBe(true);
+    store['cae-settings'] = JSON.stringify({ showSettingsButton: 'no' });
+    expect(getSettings().showSettingsButton).toBe(true);
+  });
+
+  it('defaults buttonPos to null and round-trips a valid point', () => {
+    expect(getSettings().buttonPos).toBeNull();
+    store['cae-settings'] = JSON.stringify({ buttonPos: { x: 12, y: 34 } });
+    expect(getSettings().buttonPos).toEqual({ x: 12, y: 34 });
+  });
+
+  it('rejects a malformed buttonPos (non-finite or wrong shape)', () => {
+    store['cae-settings'] = JSON.stringify({ buttonPos: { x: 'a', y: 1 } });
+    expect(getSettings().buttonPos).toBeNull();
+    store['cae-settings'] = JSON.stringify({ buttonPos: 5 });
+    expect(getSettings().buttonPos).toBeNull();
   });
 });

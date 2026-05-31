@@ -1,14 +1,22 @@
 import { getCaptured, installFetchInterceptor } from './fetch-interceptor';
-import { mountUI } from './ui';
-import { openConfigPanel } from './config';
+import { mountUI, renderButtonStack } from './artifact-popover';
+import { openSettingsPanel } from './settings-panel';
 import { getSettings, subscribe } from './settings';
-import css from './ui.css?inline';
+import { applyTheme } from './theme';
+import themeCss from './theme.css?inline';
+import popoverCss from './artifact-popover.css?inline';
+import panelCss from './settings-panel.css?inline';
 
 // Install the interceptor IMMEDIATELY (run-at: document-start) so we catch the
 // app's API calls from the very first request.
 installFetchInterceptor();
-// Inject all UI styles once (cae-prefixed; safe to add at document-start).
-GM_addStyle(css);
+// Inject tokens first so component styles can reference the variables.
+GM_addStyle(themeCss);
+GM_addStyle(popoverCss);
+GM_addStyle(panelCss);
+
+// Reflect the saved theme onto <html> before the UI mounts.
+applyTheme(getSettings().theme);
 
 // Mount the floating UI once the DOM body exists.
 if (document.body) {
@@ -47,4 +55,11 @@ function syncDebugMenu(): void {
 syncDebugMenu();
 subscribe(syncDebugMenu);
 
-GM_registerMenuCommand('Config…', openConfigPanel);
+// Live-apply appearance changes: theme to <html>, and rebuild the button stack
+// (e.g. when the gear is toggled or the position is persisted).
+subscribe(() => {
+  applyTheme(getSettings().theme);
+  renderButtonStack();
+});
+
+GM_registerMenuCommand('Config…', openSettingsPanel);
