@@ -20,7 +20,8 @@ Five quality-of-life improvements to the userscript's floating UI:
 
 ## Background
 
-The current UI (see `src/ui.ts`, `src/ui.css`, `src/config.ts`) is dark-only with
+The current UI (see `src/ui.ts`, `src/ui.css`, `src/config.ts` — renamed by this work,
+see Files) is dark-only with
 hardcoded colors. The Artifacts button is pinned bottom-right; the popover is
 hardcoded bottom-right; the config panel is centered with no backdrop and is only
 dismissable via its Close button. There is no settings button — the config panel is
@@ -144,29 +145,37 @@ finite numeric `x` and `y`; anything else falls back to `null`.
 
 ## Files
 
+### Renamed
+- `src/ui.ts` → `src/artifact-popover.ts` (button stack + artifact-list popover).
+- `src/ui.css` → `src/artifact-popover.css`.
+- `src/config.ts` → `src/settings-panel.ts` (the settings/config panel modal).
+
+These are `git mv` renames; the work below applies on top of the renamed files.
+
 ### New
 - `src/theme.ts` — `applyTheme(theme: Settings['theme'])`: sets/removes
   `data-cae-theme` on `document.documentElement`. Called at startup and whenever
   settings change.
 - `src/theme.css` — the design-token definitions (light defaults, dark via media
   query, forced light/dark via `data-cae-theme`).
-- `src/config.css` — backdrop + config-panel + section styles.
+- `src/settings-panel.css` — backdrop + config-panel + section styles.
 - `src/draggable.ts` — `makeDraggable(...)` (Pointer Events, click/drag threshold,
   drop callback) and the pure `clampToViewport(...)` helper.
 
 ### Changed
-- `src/ui.css` — tokenize all colors (use `var(--cae-*)`); add `.cae-button-stack`
-  and gear-button styles.
-- `src/ui.ts` — render the button stack (Artifacts button + gear), wire dragging and
-  click/drag disambiguation, anchor the popover to the stack.
-- `src/config.ts` — backdrop + ESC handling, sectioned layout, theme `<select>`,
-  show-settings-button checkbox, live-apply for the Appearance section.
+- `src/artifact-popover.css` — tokenize all colors (use `var(--cae-*)`); add
+  `.cae-button-stack` and gear-button styles.
+- `src/artifact-popover.ts` — render the button stack (Artifacts button + gear), wire
+  dragging and click/drag disambiguation, anchor the popover to the stack.
+- `src/settings-panel.ts` — backdrop + ESC handling, sectioned layout, theme
+  `<select>`, show-settings-button checkbox, live-apply for the Appearance section.
 - `src/settings.ts` — three new fields with tolerant parsing.
-- `src/main.ts` — inject the additional CSS strings (tokens first); call
-  `applyTheme()` at startup; subscribe to settings changes for theme + button
-  visibility.
-- `CLAUDE.md` — update the Styling section to note CSS may now span multiple
-  `?inline`-imported files (the single-file rule is relaxed).
+- `src/main.ts` — update imports to the renamed modules; inject the additional CSS
+  strings (tokens first); call `applyTheme()` at startup; subscribe to settings
+  changes for theme + button visibility.
+- `CLAUDE.md` — update the Architecture file list for the renames, and the Styling
+  section to note CSS may now span multiple `?inline`-imported files (the single-file
+  rule is relaxed).
 
 ## Testing
 
