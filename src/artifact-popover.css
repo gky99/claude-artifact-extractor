@@ -22,6 +22,9 @@
   font: 13px system-ui, sans-serif;
   cursor: pointer;
   box-shadow: 0 2px 8px var(--cae-shadow);
+  min-width: max-content;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cae-gear {
@@ -39,6 +42,8 @@
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 2px 8px var(--cae-shadow);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cae-popover {
@@ -78,12 +83,23 @@
 .cae-copy,
 .cae-download,
 .cae-obsidian {
-  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 8px;
+  line-height: 1;
+  /* Keep the transient "✓" feedback on one line so its taller glyph box can
+     never stretch the button (or, via flex stretch, its row neighbours). */
+  white-space: nowrap;
   border-radius: 6px;
   border: 1px solid var(--cae-action-border);
   background: var(--cae-action-bg);
   color: var(--cae-action-text);
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cae-row-actions {

@@ -58,14 +58,31 @@
   font: 13px system-ui, sans-serif;
 }
 
+/* Clicking the gap between a label and its field focuses the input (normal
+   <label> behavior) and would show a blinking caret there. Hide the caret so
+   that stray click isn't distracting — the label text stays fully selectable,
+   and typed text still shows; only the cursor is invisible. */
+.cae-config-input {
+  caret-color: transparent;
+}
+
 .cae-config-save,
 .cae-config-close {
-  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 28px;
+  padding: 0 8px;
+  line-height: 1;
+  white-space: nowrap; /* keep the "Saved ✓" feedback from growing the height */
   border-radius: 6px;
   border: 1px solid var(--cae-action-border);
   background: var(--cae-action-bg);
   color: var(--cae-action-text);
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cae-config-check {
