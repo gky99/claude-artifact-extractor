@@ -6,6 +6,14 @@ export default defineConfig({
   plugins: [
     monkey({
       entry: "src/main.ts",
+      server: {
+        // In dev, the entry is loaded as a native ES module in the PAGE realm,
+        // where `unsafeWindow` and the GM_* APIs don't exist — so the script
+        // throws "unsafeWindow is not defined" before it can mount. mountGmApi
+        // injects a shim that defines `unsafeWindow` and bridges the granted
+        // GM_* APIs into that realm. No effect on the production build.
+        mountGmApi: true,
+      },
       userscript: {
         name: "Claude Artifact Extractor",
         namespace: "https://github.com/gky99/claude-artifact-extractor",
@@ -27,6 +35,9 @@ export default defineConfig({
           "GM_addStyle",
           "GM_getValue",
           "GM_setValue",
+          // The script patches the page's real fetch and reads page-realm APIs
+          // via unsafeWindow; declare it so non-Tampermonkey managers expose it.
+          "unsafeWindow",
         ],
       },
     }),
