@@ -1,51 +1,72 @@
+<div align="center">
+
 # Claude Artifact Extractor
 
+[![Tampermonkey](https://img.shields.io/badge/tampermonkey-00485B?logo=tampermonkey)](https://www.tampermonkey.net)
+![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgky99%2Fclaude-artifact-extractor%2Frefs%2Fheads%2Fmain%2Fpackage.json&query=version&label=version)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+</div>
+
+
 A Tampermonkey userscript that exports Claude **research artifacts** to Markdown
-**with inline references preserved**.
+**with every inline reference preserved** — and saves them straight into your
+Obsidian vault.
 
-Claude's built-in "Download as Markdown / PDF" drops the inline citations that
-make research output useful. This script captures the page's own API data (by
-monkey-patching `fetch`) and rebuilds the artifact as Markdown with footnote-style
-references (`[^1]` markers + a reference list), which round-trips cleanly into
-Obsidian.
+Claude's built-in "Download as Markdown / PDF" drops the inline citations
+entirely, and existing exporters typically keep none — or only the first
+reference in each paragraph. This script captures the page's own API data and
+rebuilds each artifact as clean Markdown with **all** of its references intact, as
+footnotes.
 
-## Status
+## Features
 
-Early. The **capture pipeline works**; the **extractor is a stub** because
-Claude's response schema still needs to be reverse-engineered from live traffic.
-See the discovery workflow below.
+- **Preserves every reference.** Unlike the native export and other exporters, no citation is lost.
+- **Copy or Download** the artifact as Markdown.
+- **Save to Obsidian.** Send an artifact directly into your vault as a new note, filed in the folder you choose.
+- **Sensible note names.** Notes are named after the artifact's title as it appears in the chat.
 
-## How it works
+## Usage
 
-1. At `document-start`, the script patches the page's `fetch` (via `unsafeWindow`)
-   and clones every response to `claude.ai/api/...` into an in-memory store.
-   Cloning means the app's own data flow is never disturbed.
-2. Tampermonkey menu commands let you dump captured responses (discovery) or, once
-   the extractor is implemented, export the open artifact as Markdown — either
-   downloaded as a `.md` file or copied to the clipboard.
+### Setting up Save to Obsidian
 
-## Develop
+Before the **Save to Obsidian** button works, tell the script which vault to write
+to. Open config menu through Tampermonkey or the ⚙ gear next to the **⬇ Artifacts** button, then:
 
-This project uses [pnpm](https://pnpm.io/). Install it with `corepack enable pnpm`
-(or `npm i -g pnpm`) if you don't have it.
+1. Enter your **Obsidian vault name** (exactly as it appears in Obsidian).
+2. Optionally set a **Folder path** for new notes — leave it blank to save at the
+   vault root.
+3. Click **Save**.
 
-```bash
-pnpm install
-pnpm dev         # vite dev server; serves a live .user.js for install
-pnpm build       # outputs dist/claude-artifact-extractor.user.js
-pnpm lint        # eslint + tsc --noEmit
-```
+![Setting up the Obsidian path and saving an artifact](docs/Demo.gif)
 
-With `pnpm dev`, open the URL Vite prints and install the served userscript in
-Tampermonkey once — it then hot-reloads as you edit. For a fixed install, run
-`pnpm build` and drag `dist/claude-artifact-extractor.user.js` into Tampermonkey.
+Obsidian must be installed and the named vault must exist. Notes are created
+through Obsidian's `obsidian://new` URL scheme, so your browser may ask once for
+permission to open Obsidian.
 
-## Discovery workflow (reverse-engineering the schema)
+## Install
 
-1. Install the script and open a Claude **research** conversation.
-2. Tampermonkey menu → **Dump captured responses (console)**. Inspect the JSON in
-   DevTools (also parked on `window.__claudeCaptured`).
-3. Find which response carries the artifact text and where citations live.
-4. Implement `src/extractor.ts`: map citation anchors to `[^n]` markers and collect
-   the `references` list. Then the two **Export artifact → Markdown** menu commands
-   become usable.
+1. Install [Tampermonkey](https://www.tampermonkey.net/).
+2. Install the script from **[Greasy Fork](https://greasyfork.org/en/scripts/580519-claude-artifact-extractor)**.
+3. Open any conversation on Claude the floating **⬇ Artifacts** button appears in the corner.
+
+## Privacy
+
+The script runs entirely in your browser. It reads the artifact data Claude
+already loaded into the page and writes only where you tell it (clipboard, a file,
+or Obsidian). Nothing is ever sent out.
+
+## Support this project
+
+Claude-artifact-extractor is free for everyone and always will be. If you find this script helpful, you can star this project and buy me a coffee on ko-fi.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O5B420M4S1)
+
+## Development
+
+Building from source, architecture, and contributing notes live in
+**[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
+
+## License
+
+MIT
