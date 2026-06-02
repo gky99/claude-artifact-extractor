@@ -58,14 +58,6 @@
   font: 13px system-ui, sans-serif;
 }
 
-/* Clicking the gap between a label and its field focuses the input (normal
-   <label> behavior) and would show a blinking caret there. Hide the caret so
-   that stray click isn't distracting — the label text stays fully selectable,
-   and typed text still shows; only the cursor is invisible. */
-.cae-config-input {
-  caret-color: transparent;
-}
-
 .cae-config-save,
 .cae-config-close {
   display: inline-flex;

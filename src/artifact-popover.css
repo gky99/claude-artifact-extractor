@@ -14,7 +14,9 @@
 }
 
 .cae-button {
-  padding: 8px 12px;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 0 12px;
   border-radius: 8px;
   border: 1px solid var(--cae-border);
   background: var(--cae-surface-button);
@@ -28,11 +30,12 @@
 }
 
 .cae-gear {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 8px;
   border: 1px solid var(--cae-border);
